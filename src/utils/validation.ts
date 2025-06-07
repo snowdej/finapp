@@ -1,4 +1,4 @@
-import { Person, ValidationError, ValidationResult, Sex } from '../types'
+import { Person, ValidationError, ValidationResult, Sex, Asset } from '../types'
 
 function isValidName(name: string): boolean {
   return !!(name && name.trim().length > 0)
@@ -53,9 +53,11 @@ export function validatePerson(person: Partial<Person>): ValidationResult {
   }
 }
 
-// Utility function to generate unique IDs
-export function generateId(prefix: string = 'id'): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+// Utility function to generate unique IDs with optional prefix
+export function generateId(prefix?: string): string {
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).substring(2, 9)
+  return prefix ? `${prefix}-${timestamp}-${random}` : `${timestamp}-${random}`
 }
 
 // Utility function to calculate age from date of birth
@@ -94,4 +96,51 @@ export function deepClone<T>(obj: T): T {
   }
   
   return cloned
+}
+
+export function validateAsset(asset: Partial<Asset>, people: Person[]): ValidationResult {
+  const errors: ValidationError[] = []
+
+  // Name validation (required)
+  if (!asset.name || !asset.name.trim()) {
+    errors.push({ field: 'name', message: 'Asset name is required' })
+  }
+
+  // Type validation (required)
+  if (!asset.type || !asset.type.trim()) {
+    errors.push({ field: 'type', message: 'Asset type is required' })
+  }
+
+  // Current value validation (required, non-negative)
+  if (asset.currentValue === undefined || asset.currentValue === null) {
+    errors.push({ field: 'currentValue', message: 'Current value is required' })
+  } else if (asset.currentValue < 0) {
+    errors.push({ field: 'currentValue', message: 'Asset value cannot be negative' })
+  }
+
+  // Owners validation (at least one required)
+  if (!asset.ownerIds || asset.ownerIds.length === 0) {
+    errors.push({ field: 'ownerIds', message: 'At least one owner is required' })
+  } else {
+    // Validate all owner IDs exist
+    const invalidOwners = asset.ownerIds.filter(id => !people.find(p => p.id === id))
+    if (invalidOwners.length > 0) {
+      errors.push({ field: 'ownerIds', message: 'One or more selected owners do not exist' })
+    }
+  }
+
+  // Growth rate validation (optional, but if provided should be reasonable)
+  if ('growthRate' in asset && asset.growthRate !== undefined && asset.growthRate !== null && (typeof asset.growthRate === 'number') && (asset.growthRate < -100 || asset.growthRate > 100)) {
+    errors.push({ field: 'growthRate', message: 'Growth rate should be between -100% and 100%' })
+  }
+
+  // Inflation rate validation (optional, but if provided should be reasonable)
+  if ('inflationRate' in asset && asset.inflationRate !== undefined && asset.inflationRate !== null && (typeof asset.inflationRate === 'number') && (asset.inflationRate < -50 || asset.inflationRate > 50)) {
+    errors.push({ field: 'inflationRate', message: 'Inflation rate should be between -50% and 50%' })
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
 }

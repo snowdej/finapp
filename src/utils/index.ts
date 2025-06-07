@@ -4,9 +4,9 @@ import { v4 as uuidv4 } from 'uuid';
 export * from './validation';
 
 /**
- * Generate a unique ID using UUID v4
+ * Generate a unique ID using UUID v4 (without prefix)
  */
-export function generateId(): string {
+export function generateUUID(): string {
   return uuidv4();
 }
 
@@ -91,21 +91,6 @@ export function isValidDateString(dateString: string): boolean {
 }
 
 /**
- * Generate a default name with incrementing number
- */
-export function generateDefaultName(baseName: string, existingNames: string[]): string {
-  let counter = 1;
-  let name = `${baseName} ${counter}`;
-  
-  while (existingNames.includes(name)) {
-    counter++;
-    name = `${baseName} ${counter}`;
-  }
-  
-  return name;
-}
-
-/**
  * Check if person is a child based on age
  */
 export function isChild(dateOfBirth: string): boolean {
@@ -119,4 +104,26 @@ export function isChild(dateOfBirth: string): boolean {
   }
   
   return age < 18
+}
+
+/**
+ * Utility function to generate unique IDs with optional prefix
+ */
+export function generateId(prefix?: string): string {
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).substring(2, 9)
+  return prefix ? `${prefix}-${timestamp}-${random}` : `${timestamp}-${random}`
+}
+
+/**
+ * Generate default names for entities
+ */
+export function generateDefaultName(prefix: string, existingNames: string[]): string {
+  const existingNumbers = existingNames
+    .filter(name => name.startsWith(`${prefix} `))
+    .map(name => parseInt(name.replace(`${prefix} `, '')))
+    .filter(num => !isNaN(num))
+  
+  const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1
+  return `${prefix} ${nextNumber}`
 }

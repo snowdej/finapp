@@ -76,6 +76,7 @@ export function PersonCard({
               size="sm"
               onClick={onEdit}
               disabled={disabled}
+              aria-label={`Edit ${person.name}`}
             >
               <Edit className="h-4 w-4" />
             </Button>
@@ -85,6 +86,7 @@ export function PersonCard({
               onClick={handleDelete}
               disabled={disabled}
               className={showDeleteConfirm ? "text-destructive" : ""}
+              aria-label={`Delete ${person.name}`}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -93,7 +95,7 @@ export function PersonCard({
       </CardHeader>
       <CardContent>
         <div className="space-y-2 text-sm">
-          <div>
+          <div data-testid={`age-${person.id}`}>
             <span className="font-medium">Age:</span> {age}
           </div>
           <div>
@@ -101,12 +103,6 @@ export function PersonCard({
           </div>
           <div>
             <span className="font-medium">Date of Birth:</span> {person.dateOfBirth}
-          </div>
-          <div>
-            <span className="font-medium">Status:</span> 
-            <span className={`font-medium ml-1 ${person.isChild ? 'text-orange-600' : 'text-green-600'}`}>
-              {person.isChild ? 'Child' : 'Adult'}
-            </span>
           </div>
         </div>
         
@@ -120,6 +116,7 @@ export function PersonCard({
                 size="sm"
                 variant="default"
                 onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 Confirm
               </Button>
@@ -136,4 +133,4 @@ export function PersonCard({
       </CardContent>
     </Card>
   )
-}
+} 

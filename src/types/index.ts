@@ -9,7 +9,7 @@ export interface Person {
   name: string
   dateOfBirth: string
   sex: Sex
-  isChild?: boolean
+  isChild?: boolean // Optional computed property
 }
 
 // Validation types

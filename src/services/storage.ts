@@ -1,4 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
+import { generateId } from '../utils'
 
 // Define the database schema
 interface FinAppDB extends DBSchema {
@@ -38,11 +39,6 @@ const DB_VERSION = 1
 
 let dbInstance: IDBPDatabase<FinAppDB> | null = null
 
-// Utility function to generate unique IDs
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-}
-
 // Initialize the database
 export async function initDB(): Promise<IDBPDatabase<FinAppDB>> {
   if (dbInstance) {
@@ -79,7 +75,7 @@ export async function initDB(): Promise<IDBPDatabase<FinAppDB>> {
 export async function savePlan(plan: any): Promise<string> {
   try {
     const db = await initDB()
-    const planId = plan.id || generateId()
+    const planId = plan.id || generateId('plan')
     const planData = {
       id: planId,
       name: plan.name || 'Untitled Plan',
@@ -140,7 +136,7 @@ export async function deletePlan(id: string): Promise<void> {
 export async function saveScenario(scenario: any): Promise<string> {
   try {
     const db = await initDB()
-    const scenarioId = scenario.id || generateId()
+    const scenarioId = scenario.id || generateId('scenario')
     const scenarioData = {
       id: scenarioId,
       planId: scenario.planId,
@@ -292,7 +288,7 @@ export async function exportPlanAsJSON(planId: string): Promise<string> {
 export async function importPlanFromJSON(jsonData: string): Promise<string> {
   try {
     const data = JSON.parse(jsonData)
-    const newPlanId = generateId()
+    const newPlanId = generateId('plan')
     
     // Import plan with new ID
     const plan = {
@@ -309,7 +305,7 @@ export async function importPlanFromJSON(jsonData: string): Promise<string> {
       for (const scenario of data.scenarios) {
         const newScenario = {
           ...scenario,
-          id: generateId(),
+          id: generateId('scenario'),
           planId: newPlanId,
           createdAt: new Date().toISOString()
         }

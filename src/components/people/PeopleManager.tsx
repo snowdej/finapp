@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Person, Sex } from '../../types'
-import { validatePerson, generateId, calculateAge, isChild } from '../../utils'
+import { validatePerson } from '../../utils/validation'
+import { generateId, calculateAge, generateDefaultName } from '../../utils'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { PersonForm } from './PersonForm'
@@ -17,14 +18,8 @@ export function PeopleManager({ people, onUpdatePeople }: PeopleManagerProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
 
   const generatePersonName = (existingPeople: Person[]): string => {
-    const existingNumbers = existingPeople
-      .map(p => p.name)
-      .filter(name => name.startsWith('Person '))
-      .map(name => parseInt(name.replace('Person ', '')))
-      .filter(num => !isNaN(num))
-    
-    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1
-    return `Person ${nextNumber}`
+    const existingNames = existingPeople.map(p => p.name)
+    return generateDefaultName('Person', existingNames)
   }
 
   const handleAddPerson = (personData: Partial<Person>) => {
@@ -34,11 +29,10 @@ export function PeopleManager({ people, onUpdatePeople }: PeopleManagerProps) {
     }
 
     const newPerson: Person = {
-      id: generateId(),
+      id: generateId('person'),
       name: personData.name?.trim() || generatePersonName(people),
       dateOfBirth: personData.dateOfBirth!,
-      sex: personData.sex!,
-      isChild: isChild(personData.dateOfBirth!)
+      sex: personData.sex!
     }
 
     onUpdatePeople([...people, newPerson])
@@ -58,8 +52,7 @@ export function PeopleManager({ people, onUpdatePeople }: PeopleManagerProps) {
             ...person,
             name: personData.name?.trim() || person.name,
             dateOfBirth: personData.dateOfBirth!,
-            sex: personData.sex!,
-            isChild: isChild(personData.dateOfBirth!)
+            sex: personData.sex!
           }
         : person
     )
@@ -92,6 +85,7 @@ export function PeopleManager({ people, onUpdatePeople }: PeopleManagerProps) {
           onClick={() => setIsAdding(true)}
           disabled={isAdding || editingId !== null}
           className="flex items-center gap-2"
+          data-testid="main-add-person-button"
         >
           <Plus className="h-4 w-4" />
           Add Person
@@ -126,7 +120,10 @@ export function PeopleManager({ people, onUpdatePeople }: PeopleManagerProps) {
             <p className="text-muted-foreground text-center mb-4">
               Start by adding the people who are part of your financial plan
             </p>
-            <Button onClick={() => setIsAdding(true)}>
+            <Button 
+              onClick={() => setIsAdding(true)}
+              data-testid="empty-state-add-person-button"
+            >
               Add Your First Person
             </Button>
           </CardContent>
@@ -150,40 +147,42 @@ export function PeopleManager({ people, onUpdatePeople }: PeopleManagerProps) {
       )}
 
       {/* Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold">{people.length}</div>
-              <div className="text-sm text-muted-foreground">Total People</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold">
-                {people.filter(p => p.sex === Sex.M).length}
+      {people.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div data-testid="summary-total">
+                <div className="text-2xl font-bold">{people.length}</div>
+                <div className="text-sm text-muted-foreground">Total People</div>
               </div>
-              <div className="text-sm text-muted-foreground">Male</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold">
-                {people.filter(p => p.sex === Sex.F).length}
+              <div data-testid="summary-male">
+                <div className="text-2xl font-bold">
+                  {people.filter(p => p.sex === Sex.M).length}
+                </div>
+                <div className="text-sm text-muted-foreground">Male</div>
               </div>
-              <div className="text-sm text-muted-foreground">Female</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold">
-                {people.length > 0 
-                  ? Math.round(people.reduce((sum, p) => sum + calculateAge(p.dateOfBirth), 0) / people.length)
-                  : 0
-                }
+              <div data-testid="summary-female">
+                <div className="text-2xl font-bold">
+                  {people.filter(p => p.sex === Sex.F).length}
+                </div>
+                <div className="text-sm text-muted-foreground">Female</div>
               </div>
-              <div className="text-sm text-muted-foreground">Avg Age</div>
+              <div data-testid="summary-avg-age">
+                <div className="text-2xl font-bold">
+                  {people.length > 0 
+                    ? Math.round(people.reduce((sum, p) => sum + calculateAge(p.dateOfBirth), 0) / people.length)
+                    : 0
+                  }
+                </div>
+                <div className="text-sm text-muted-foreground">Avg Age</div>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
