@@ -8,18 +8,7 @@ export interface Person {
   name: string;
   dateOfBirth: string;
   sex: Sex;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Loan {
-  id: string;
-  name: string;
-  principal: number;
-  interestRate: number;
-  termYears: number;
-  startDate: string;
-  monthlyPayment?: number;
+  isChild?: boolean;
 }
 
 export interface Asset {
@@ -28,24 +17,39 @@ export interface Asset {
   type: 'ISA' | 'SIPP' | 'Property' | 'Investment' | 'Cash' | 'Other';
   currentValue: number;
   ownerIds: string[];
-  loans: Loan[];
-  createdAt: Date;
-  updatedAt: Date;
+  loans?: Loan[];
+  overrides?: AssetOverride[];
+}
+
+export interface Loan {
+  id: string;
+  name: string;
+  balance: number;
+  interestRate: number;
+  monthlyPayment: number;
+  startYear: number;
+  endYear?: number;
+}
+
+export interface AssetOverride {
+  year: number;
+  value: number;
+  reason?: string;
 }
 
 export interface FinancialItem {
   id: string;
   name: string;
-  type: 'Income' | 'Commitment';
   amount: number;
-  frequency: 'Weekly' | 'Monthly' | 'Quarterly' | 'Annually';
+  frequency: 'annual' | 'monthly' | 'weekly';
   startYear: number;
   endYear?: number;
   ownerIds: string[];
+  category?: string;
+  destination?: 'cash' | 'asset' | 'external';
+  destinationAssetId?: string;
   inflationRate?: number;
   growthRate?: number;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface Event {
@@ -53,21 +57,9 @@ export interface Event {
   name: string;
   year: number;
   amount: number;
-  type: 'Income' | 'Expense' | 'AssetChange';
+  type: 'income' | 'expense' | 'asset_sale' | 'inheritance' | 'other';
   assetId?: string;
   description?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Assumptions {
-  id: string;
-  planId: string;
-  defaultInflationRate: number;
-  defaultGrowthRate: number;
-  categoryOverrides: Record<string, { inflationRate?: number; growthRate?: number }>;
-  itemOverrides: Record<string, { inflationRate?: number; growthRate?: number }>;
-  updatedAt: Date;
 }
 
 export interface Scenario {
@@ -76,38 +68,45 @@ export interface Scenario {
   name: string;
   isBase: boolean;
   description?: string;
-  people: Person[];
-  assets: Asset[];
-  financialItems: FinancialItem[];
-  events: Event[];
   assumptions: Assumptions;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt?: string;
 }
 
-export interface ChangeLog {
+export interface Assumptions {
+  inflationRate: number;
+  incomeGrowthRate: number;
+  assetGrowthRates: Record<string, number>; // Asset type -> growth rate
+  retirementAge: number;
+  lifeExpectancy: number;
+}
+
+export interface ChangeLogEntry {
   id: string;
   planId: string;
-  scenarioId: string;
-  action: string;
-  entityType: 'Person' | 'Asset' | 'FinancialItem' | 'Event' | 'Assumptions';
+  scenarioId?: string;
+  timestamp: string;
+  action: 'create' | 'update' | 'delete';
+  entityType: 'person' | 'asset' | 'income' | 'commitment' | 'event' | 'scenario' | 'assumptions';
   entityId: string;
-  summary: string;
-  timestamp: Date;
-  previousState?: any;
-  newState?: any;
+  description: string;
+  oldValue?: any;
+  newValue?: any;
 }
 
-export interface Plan {
+export interface FinancialPlan {
   id: string;
   name: string;
-  description?: string;
-  currentScenarioId: string;
+  people: Person[];
+  assets: Asset[];
+  income: FinancialItem[];
+  commitments: FinancialItem[];
+  events: Event[];
   scenarios: Scenario[];
-  changeLogs: ChangeLog[];
-  schemaVersion: string;
-  createdAt: Date;
-  updatedAt: Date;
+  activeScenarioId: string;
+  changeLog: ChangeLogEntry[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ValidationError {
@@ -118,4 +117,23 @@ export interface ValidationError {
 export interface ValidationResult {
   isValid: boolean;
   errors: ValidationError[];
+}
+
+// Projection types
+export interface YearlyProjection {
+  year: number;
+  assets: Record<string, number>;
+  income: Record<string, number>;
+  commitments: Record<string, number>;
+  netWorth: number;
+  cashFlow: number;
+  warnings: string[];
+}
+
+export interface ProjectionSummary {
+  years: YearlyProjection[];
+  totalAssets: number;
+  totalIncome: number;
+  totalCommitments: number;
+  projectedNetWorth: number;
 }

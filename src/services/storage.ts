@@ -28,7 +28,7 @@ interface FinAppDB extends DBSchema {
     }
     indexes: {
       'by-planId': string
-      'by-isBase': boolean
+      'by-isBase': string
     }
   }
 }

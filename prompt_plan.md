@@ -26,7 +26,7 @@
 * Implement light/dark mode toggle (with Tailwind/shadcn/ui)
 * Add placeholder routes/views for: People, Assets, Income, Commitments, Events, Scenarios, Settings
 
-### 4. Data Storage, Loading, and Saving - [ ]
+### 4. Data Storage, Loading, and Saving - [x]
 
 * Implement IndexedDB wrapper for CRUD operations
 * Implement autosave and manual save/export as JSON (browser File API)
@@ -133,7 +133,7 @@ Implement a light/dark mode toggle (persist theme in localStorage). Write tests 
 
 ---
 
-### \[Step 4] — **IndexedDB Storage, Import/Export** - [ ]
+### \[Step 4] — **IndexedDB Storage, Import/Export** - [x]
 
 ```text
 Create a data persistence module using idb (IndexedDB wrapper). Implement functions for CRUD operations on plans/scenarios.
