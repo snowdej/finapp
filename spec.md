@@ -1,48 +1,89 @@
-# Pension & Property Financial Projection Tool — Developer Specification
+# Pension & Property Financial Projection Tool — Developer Specification (Refined)
 
 ## 1. Overview
 
 A browser-based, single-user application for comprehensive pension and property financial planning. The tool allows creation of a detailed household plan, flexible income and asset tracking, scenario modelling, and data visualisation. The application prioritises local data privacy (all data is stored locally), and uses British English and GBP (£) throughout.
 
+---
+
 ## 2. Requirements
 
 ### Functional Requirements
 
-* Users can create and manage a “Household Plan” containing:
+* Users can create and manage a **“Household Plan”** containing:
 
-  * Multiple named people (e.g., Jo, Fred), each with age, sex, and tracked year-by-year
-  * Flexible, user-defined income, investment, asset, and commitment categories (with templates for salary, rental, ISAs, etc.)
-  * Assignment of items to a person
-  * Per-item attributes: name, owner, type, amount, frequency, start/end date, index-linking, growth rate, tax treatment, notes, etc.
-  * Nominal/future and net present value calculations for all projections, per item and for the plan overall
-  * Global (plan-wide) inflation/growth/discount rates, overridable at category or item level
-  * Full scenario system: clone/edit/save independent scenario copies, amend any detail, compare/export results
-  * Initial values for investments/assets, with specified growth/contribution/withdrawal, plus manual override per year to reset to reality
-  * Commitment/outgoing items support multiple frequencies (one-off, monthly, weekly, quarterly, annual), end dates, inflation-linking per entry
-  * Age-tracking for all people (children/adults); items can be linked to age-based triggers/milestones
-  * Property assets track name/location, ownership, purchase price/date, value/growth, mortgage details, rental income, planned sale, sale assumptions, remortgage/equity options
-  * Only DC (defined contribution) pensions, with all standard features: contributions (personal/employer), salary sacrifice, tax relief, growth, charges, lump sum/drawdown scheduling, etc.
-  * Allow any income to be sourced from an asset (e.g., ISA/SIPP withdrawal), with balance automatically reduced; or simple custom-labelled sources
-  * Create custom future events (positive/negative, dated, optional asset linkage, label, assignment)
-  * Timeline/list view for future events
-  * Yearly, tabular (Excel-like) snapshots for all figures, with export for actual plan and all scenarios
-  * Full plan or scenario export/import as JSON, including all configuration and data
-  * Option to start from an empty plan or a prepopulated sample (JSON template)
-  * Data validation: prevent duplicate names, warn but allow negative balances, highlight missing/invalid fields, soft (warning) validation unless critical
-  * In-app git-like history timeline (all changes, timestamps, rollback/view old version)
-  * Single-user only, no authentication, all data local; user specifies local file save location
-  * All UI and terminology in British English; only GBP (£) as currency
-  * Dashboard is the landing page (no onboarding or guided tour)
+  * Multiple named people (e.g., Jo, Fred), each with:
+
+    * Age (tracked by date of birth)
+    * Sex
+    * Unique or auto-assigned names ("Person 1", etc. if blank)
+  * All people tracked year-by-year for projections (age milestones supported)
+  * Flexible, user-defined income, investment, asset, and commitment categories (templates for salary, rental, ISAs, etc.)
+  * Assignment of items/assets to one, many, or all participants (joint ownership is always equal split)
+  * Per-item attributes: name, owner(s), type/category, amount, frequency, start/end date, index-linking (inflation), growth rate, tax treatment (label only), notes
+  * Allow manual override of a specific asset/item value for a single year ("known value"), with future projections using the override as the new base
+
+    * List and manage all manual valuation points per item, with add/remove
+    * Manual override events recorded in change timeline/history
+    * Overrides highlighted in tables/graphs
+  * Commitment/outgoing items support frequencies: one-off, monthly, weekly, quarterly, annual; have end dates and can index-link by inflation (category or item override)
+  * For properties/assets:
+
+    * Assign name/location
+    * Assign one or more owners (equal split)
+    * Track purchase price/date, current value (growth/inflation), and a timeline of multiple loans/mortgages
+    * Each loan: amount, interest rate, start/end, repayment type, overpayment
+    * Net asset value = asset value minus all outstanding asset-backed loans
+  * Only DC (defined contribution) pensions, supporting:
+
+    * Owner, fund/provider label, starting balance
+    * Personal & employer contributions (frequency, amount, start/end)
+    * Salary sacrifice (destination: tracked asset or cash)
+    * Tax treatment label
+    * Growth/charges
+    * Lump sum withdrawal, drawdown schedule
+  * Any income/commitment can be assigned to a person, or all adults (joint by default, children separately)
+
+    * All income and expenditure is assumed joint for adults, unless assigned to a child
+    * Destination for income: cash, asset, or other account as specified by user
+  * Plan-wide default assumptions for inflation and growth rate, with category default and per-item override (precedence: plan-wide < category < item)
+  * Custom future events (positive/negative, dated, optional asset linkage, label, assignable to household/person)
+  * Timeline/list view for all future events
+  * Yearly, tabular (Excel-like) snapshots for all figures, with option to group/merge/expand/collapse by broad categories (e.g., all ISAs, all income sources)
+  * Full plan or scenario export/import as JSON, including all configuration, metadata (plan name, date, schema version, GUID)
+
+    * On import, always create a new plan with a unique GUID; prompt to rename on conflict
+  * Option to start from an empty plan or prepopulated sample (JSON template)
+  * Validation:
+
+    * Prevent negative balances only for investments (block save); allow negatives elsewhere with warning
+    * Block on critical date errors (end before start, invalid dates)
+    * Auto-label missing person names (e.g., Person 1)
+    * Soft warnings (not blocking) for other fields/issues
+  * Git-like in-app history timeline:
+
+    * Track each significant interaction: add/remove/edit items, assumption/growth changes, manual overrides
+    * Each event records: auto-generated summary, date/time, base/scenario, type
+    * User can view history, revert to previous plan state (hard reset only)
+    * Export of a base plan or scenario as JSON; import as new plan
+  * Scenarios:
+
+    * Scenarios listed; click to switch active scenario, updating main dashboard/tables/graphs
+    * Only one scenario shown at a time
+    * Base scenario clearly indicated
+  * Dashboard is landing page; no onboarding/tour
   * Light/dark mode toggle
-  * No integrations, reminders, or alerts in the first version
-  * General accessibility best practices (labels, keyboard, screen reader friendly)
+  * No integrations, reminders, or alerts in v1
+  * General accessibility best practices
+  * All UI in British English; GBP (£) only
 
 ### Non-Functional Requirements
 
-* Local, browser-based operation; no data is sent off-device
-* Fast, responsive UI suitable for tabular and graphical data
-* Modular codebase for future extensibility (e.g., multi-user, integrations)
-* Secure: no cloud storage, no cookies unless for theme/local settings
+* Local, browser-based operation; all data stored locally via IndexedDB (with localStorage fallback if needed)
+* User chooses export location for JSON/CSV files (no cloud storage, no outbound network traffic)
+* Modular codebase for future extensibility
+* Fast/responsive UI; summary views/grouped tables for large datasets
+* No authentication or multi-user support
 
 ---
 
@@ -50,62 +91,72 @@ A browser-based, single-user application for comprehensive pension and property 
 
 ### Technology Stack
 
-* **React** for UI
-* **shadcn/ui** or **Material UI** for accessible, responsive component library
-* **Tailwind CSS** for styling and rapid theming (supports light/dark mode)
-* **Recharts** (preferred) or **Chart.js** for data visualisation (line, bar, pie, stacked, etc.)
-* **React-Table** for high-performance, flexible grid/table views
-* **IndexedDB** (via `idb` or similar) for local structured storage, enabling versioning/history
-* **Browser File APIs** for user-directed import/export (JSON/CSV)
-* **TypeScript** for static typing, maintainability
-* **Vite** or **Create React App** for build/dev tooling
+* **React** (TypeScript) for UI
+* **shadcn/ui** (preferred) or Material UI for accessible components
+* **Tailwind CSS** for styling, light/dark support
+* **Recharts** for graphs/visuals
+* **React-Table** for tables, with category grouping/expand/collapse
+* **IndexedDB** for local data (via idb or similar)
+* **Browser File APIs** for export/import
+* **Vite** or CRA for tooling
 
 ### Data Model (Sketch)
 
 ```typescript
-// Person
 interface Person {
   id: string;
-  name: string;
+  name: string; // "Person 1", etc. if blank
   dob: string; // YYYY-MM-DD
   sex: 'male' | 'female' | 'other';
 }
 
-// Asset/Investment
 interface Asset {
   id: string;
   name: string;
   type: string; // e.g., ISA, Property, SIPP
-  ownerId: string | string[]; // single or joint
+  owners: string[]; // list of person ids (equal split)
   location?: string;
   startValue: number;
   growthRate: number;
+  inflationRate: number;
   manualOverrides?: { [year: number]: number };
-  linkedIncomeIds?: string[];
-  // ...mortgage, rental, etc.
+  loans?: Loan[];
+  // ...other fields
 }
 
-// Income/Commitment/Event
+interface Loan {
+  id: string;
+  assetId: string;
+  amount: number;
+  interestRate: number;
+  startDate: string;
+  endDate: string;
+  repaymentType: 'repayment' | 'interest-only';
+  overpayments?: number[];
+}
+
 interface FinancialItem {
   id: string;
   label: string;
   category: 'income' | 'commitment' | 'event';
-  ownerId: string;
-  sourceAssetId?: string; // for drawdowns
+  owners: string[]; // adults (joint by default) or single child
+  sourceAssetId?: string; // for drawdowns etc.
+  destination: 'cash' | string; // asset/account id
   amount: number;
   frequency: 'monthly' | 'weekly' | 'quarterly' | 'annual' | 'one-off';
   startDate: string;
   endDate?: string;
   indexLinked: boolean;
   customGrowthRate?: number;
+  customInflationRate?: number;
+  taxTreatment: string; // label only
   notes?: string;
 }
 
-// Scenario
 interface Scenario {
   id: string;
   name: string;
-  basePlanId: string; // allows for cloning
+  basePlanId: string;
   assumptions: Assumptions;
   people: Person[];
   assets: Asset[];
@@ -114,43 +165,21 @@ interface Scenario {
   history: ChangeLog[];
 }
 
-// ChangeLog (history)
 interface ChangeLog {
   id: string;
   timestamp: string;
-  user: string;
-  changeSummary: string;
+  planOrScenario: string;
+  summary: string;
   changes: object;
 }
 
-// Assumptions
 interface Assumptions {
   inflation: number;
-  investmentReturn: number;
-  discountRate: number;
-  // ...can be overridden per asset/item
+  growth: number;
+  discount: number;
+  // category/item overrides
 }
 ```
-
-### Storage Approach
-
-* All data stored in IndexedDB with robust schema, or fallback to localStorage for basic demo
-* User-initiated import/export (JSON for complete plan, CSV for table snapshots)
-* Version history in IndexedDB, support for rollback/viewing past versions
-* Autosave (with manual save/export option)
-* All data changes trigger save to local storage
-
-### UI/UX Features
-
-* Responsive, accessible dashboard
-* Tabbed or side-panel navigation for: People, Assets, Incomes/Commitments, Events, Scenarios, Settings
-* Modal/dialog or side-drawer forms for add/edit
-* All tables filterable and sortable
-* Graphs show net worth, cash flow, asset balances, breakdown by category/person
-* Light/dark mode toggle
-* Validation warnings on forms, error messages inline
-* Timeline/history accessible from dashboard
-* Data export/import controls prominent in UI
 
 ---
 
@@ -158,78 +187,87 @@ interface Assumptions {
 
 ### Data Handling
 
-* Use UUIDs for all object IDs
-* On startup, load from IndexedDB (or prompt for import)
-* Validate data on entry: prevent duplicates, logical date consistency, warn on negative balances
-* Store all changes with timestamp and summary for git-like history
-* Export (full plan/scenario) as JSON — includes all tables, assets, events, assumptions, history
-* Export table snapshots as CSV (yearly breakdowns, actual/scenario)
-* Import merges or replaces based on user choice
-* User can select file location on export (browser File API)
-* All local data is user-only, no sync/cloud
+* All local, in IndexedDB (with localStorage fallback)
+* Autosave after each significant interaction
+* Export/import as JSON (includes GUID, plan name, schema version)
+* On import, new plan always created with new GUID; prompt user to resolve any name clash
+* List of all manual overrides per asset/item, with option to remove
+* Autosave and manual save supported
 
 ### Error Handling Strategies
 
-* Form validation: inline, real-time; highlight errors or warnings
-* Soft warnings for negative asset balances, allow override with reason/note
-* Hard prevention for critical issues (e.g., duplicate names, invalid dates)
-* Catch and display all file import/export errors, show readable message if file/format is invalid
-* Backup/corruption fallback: allow user to export/backup/restore at any time
-* Console logging for dev/debug, user-friendly error panels for prod
-* Unexpected errors: show modal with error info and option to download current data for support
+* Validation:
+
+  * Block save for: negative investments, critical date errors, missing dates
+  * Soft warnings for: negative balances elsewhere, most missing fields
+  * Missing person name auto-filled (Person 1...)
+* All file import/export errors handled gracefully; user shown preview before accepting
+* On file import, never merge or overwrite existing plans
+* History: each change is a form-level interaction (not every field edit); user can view and hard-revert to any point
 
 ---
 
-## 5. Testing Plan
+## 5. UI/UX and Accessibility
+
+* Dashboard as landing page (no onboarding)
+* Navigation: sidebar/tabs for People, Assets, Income, Commitments, Events, Scenarios, Settings
+* Tables: group/summarise by category, with expand/collapse for details
+
+  * User can choose to view totals only, or expand to see individual items
+* Graphs: support light/dark mode
+* Large datasets: rely on summary/grouped views; export for deep-dive
+* Manual overrides and warnings highlighted in UI
+* Accessibility: best effort/good practices, no hard minimums
+
+---
+
+## 6. Testing Plan
 
 ### Unit Testing
 
-* All core data models and calculation utilities tested with Jest (or Vitest)
-* Validation and form logic tested for all edge cases
-* Test all scenario cloning, export/import, and version history features
+* All data model/calculation utilities (Jest/Vitest)
+* Form logic and validation, including override/critical error handling
+* Scenario creation, export/import, timeline history
 
 ### Integration/UI Testing
 
-* Cypress or Playwright for UI workflow coverage:
+* Cypress/Playwright for major workflows:
 
-  * Add/edit/delete people/assets/events
-  * Create/clone scenarios, switch between them
-  * Test validation and warnings
-  * Table/grid sorting/filtering
-  * Chart/graph rendering (light/dark)
-  * Export/import flows
-  * Version history: change, rollback, view old
-  * Accessibility checks: keyboard, screen reader
+  * Add/edit/delete
+  * Group/ungroup views
+  * Scenario switching
+  * Validation/override logic
+  * Table/graph render (light/dark)
+  * Export/import
+  * Timeline/history
+  * Accessibility checks
 
 ### Manual Testing
 
 * Cross-browser (Chrome, Edge, Firefox, Safari)
-* Export/import plans, actual vs scenario
-* Check data privacy (network tab: no outbound data)
 * Large dataset performance
-* Dark/light mode, British English and £ currency
+* All planned flows, export/import
+* Dark/light mode, British English/£ currency
 
 ---
 
-## 6. Deliverables
+## 7. Deliverables
 
-* Source code (TypeScript, React, preferred structure)
-* README with setup, run, build, and test instructions
-* Sample JSON plan for demo/import
-* Documentation for all data models and export/import formats
-* App bundled as static files (can be run locally)
-* User documentation (Markdown): quick start, tips, data backup
+* Source code (React/TypeScript)
+* README and sample JSON plan
+* Documentation for data models/export/import
+* Static build for local use
+* User documentation (Markdown): quick start, backup, etc.
 
 ---
 
-## 7. Notes/Future Enhancements (out of scope for v1)
+## 8. Notes/Future Enhancements (out of scope for v1)
 
 * Multi-user/collaboration support
-* Integrations (bank feeds, Google Sheets, calendars)
-* API for remote storage/backups
-* Custom report/dashboard builder
-* Role-based access, permissions
+* Automated UK tax/NI calculations
+* Integrations (banks, spreadsheets)
+* Custom report builder
+* Role-based access
 * Multi-currency
-* Defined benefit pensions
-* More granular event triggers/automation
-
+* DB pensions
+* Advanced event triggers
