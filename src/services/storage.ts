@@ -28,12 +28,8 @@ interface FinAppDB extends DBSchema {
     }
     indexes: {
       'by-planId': string
-      'by-isBase': string
+      'by-isBase': boolean
     }
-  }
-  settings: {
-    key: string
-    value: any
   }
 }
 
@@ -192,6 +188,78 @@ export async function deleteScenario(id: string): Promise<void> {
     console.error('Error deleting scenario:', error)
     throw error
   }
+}
+
+// Add autosave functionality
+let autosaveTimeout: NodeJS.Timeout | null = null
+
+export function scheduleAutosave(planData: any, delay: number = 2000): void {
+  if (autosaveTimeout) {
+    clearTimeout(autosaveTimeout)
+  }
+  
+  autosaveTimeout = setTimeout(async () => {
+    try {
+      await savePlan(planData)
+      console.log('Plan autosaved successfully')
+    } catch (error) {
+      console.error('Autosave failed:', error)
+    }
+  }, delay)
+}
+
+export function cancelAutosave(): void {
+  if (autosaveTimeout) {
+    clearTimeout(autosaveTimeout)
+    autosaveTimeout = null
+  }
+}
+
+// Export plan as downloadable file
+export async function downloadPlanAsJSON(planId: string, fileName?: string): Promise<void> {
+  try {
+    const jsonData = await exportPlanAsJSON(planId)
+    const plan = await loadPlan(planId)
+    const defaultFileName = `${plan?.name || 'financial-plan'}-${new Date().toISOString().split('T')[0]}.json`
+    
+    const blob = new Blob([jsonData], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName || defaultFileName
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Error downloading plan:', error)
+    throw error
+  }
+}
+
+// Import plan from file
+export async function importPlanFromFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    
+    reader.onload = async (event) => {
+      try {
+        const jsonData = event.target?.result as string
+        const newPlanId = await importPlanFromJSON(jsonData)
+        resolve(newPlanId)
+      } catch (error) {
+        reject(error)
+      }
+    }
+    
+    reader.onerror = () => {
+      reject(new Error('Failed to read file'))
+    }
+    
+    reader.readAsText(file)
+  })
 }
 
 // Export/Import functions

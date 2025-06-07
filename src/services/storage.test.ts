@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   initDB,
   savePlan,
@@ -12,6 +12,8 @@ import {
   deleteScenario,
   exportPlanAsJSON,
   importPlanFromJSON,
+  scheduleAutosave,
+  cancelAutosave,
   clearAllData
 } from './storage';
 
@@ -175,6 +177,71 @@ describe('Storage Service', () => {
       const importedScenarios = await loadScenariosByPlan(newPlanId);
       expect(importedScenarios).toHaveLength(1);
       expect(importedScenarios[0].name).toBe('Base');
+    });
+  });
+
+  describe('Autosave functionality', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+    });
+
+    afterEach(() => {
+      vi.useRealTimers()
+      cancelAutosave()
+    });
+
+    it('should schedule autosave with delay', async () => {
+      const testPlan = { id: 'autosave-test', name: 'Autosave Plan' };
+      
+      scheduleAutosave(testPlan, 1000);
+      
+      // Fast-forward time
+      vi.advanceTimersByTime(1000);
+      
+      // Wait for async operations
+      await vi.runAllTimersAsync();
+      
+      const savedPlan = await loadPlan('autosave-test');
+      expect(savedPlan).toEqual(testPlan);
+    });
+
+    it('should cancel previous autosave when scheduling new one', async () => {
+      const plan1 = { id: 'plan1', name: 'Plan 1' };
+      const plan2 = { id: 'plan2', name: 'Plan 2' };
+      
+      scheduleAutosave(plan1, 1000);
+      scheduleAutosave(plan2, 1000); // Should cancel previous
+      
+      vi.advanceTimersByTime(500);
+      expect(await loadPlan('plan1')).toBeNull();
+      
+      vi.advanceTimersByTime(500);
+      await vi.runAllTimersAsync();
+      
+      expect(await loadPlan('plan1')).toBeNull();
+      expect(await loadPlan('plan2')).toEqual(plan2);
+    });
+  });
+
+  describe('File operations', () => {
+    it('should handle import from JSON string with validation', async () => {
+      const validData = {
+        metadata: { version: '1.0.0' },
+        plan: { id: 'test', name: 'Test Plan', people: [] },
+        scenarios: []
+      };
+      
+      const newPlanId = await importPlanFromJSON(JSON.stringify(validData));
+      expect(newPlanId).toBeDefined();
+      
+      const importedPlan = await loadPlan(newPlanId);
+      expect(importedPlan.name).toBe('Test Plan (Imported)');
+    });
+
+    it('should handle malformed JSON gracefully', async () => {
+      const invalidJson = '{ invalid json }';
+      
+      await expect(importPlanFromJSON(invalidJson)).rejects.toThrow();
     });
   });
 });

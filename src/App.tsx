@@ -14,6 +14,9 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card'
 import { Button } from './components/ui/button'
+import { ImportExportDialog } from './components/ui/ImportExportDialog'
+import { loadAllPlans, savePlan } from './services/storage'
+import { useAutosave } from './hooks/useAutosave'
 
 type TabId = 'dashboard' | 'people' | 'assets' | 'income' | 'commitments' | 'events' | 'scenarios' | 'settings'
 
@@ -26,6 +29,11 @@ interface NavItem {
 function App() {
   const [darkMode, setDarkMode] = useState(false)
   const [activeTab, setActiveTab] = useState<TabId>('dashboard')
+  const [currentPlan, setCurrentPlan] = useState<any>(null)
+  const [planId, setPlanId] = useState<string | null>(null)
+
+  // Enable autosave for the current plan
+  useAutosave(currentPlan, !!currentPlan)
 
   // Load theme from localStorage on mount
   useEffect(() => {
@@ -43,6 +51,43 @@ function App() {
     localStorage.setItem('theme', newDarkMode ? 'dark' : 'light')
   }
 
+  // Load or create initial plan
+  useEffect(() => {
+    const initializePlan = async () => {
+      try {
+        const plans = await loadAllPlans()
+        if (plans.length > 0) {
+          // Load the most recent plan
+          const latestPlan = plans.sort((a, b) => 
+            new Date(b.updatedAt || b.createdAt).getTime() - 
+            new Date(a.updatedAt || a.createdAt).getTime()
+          )[0]
+          setCurrentPlan(latestPlan)
+          setPlanId(latestPlan.id)
+        } else {
+          // Create a default plan
+          const defaultPlan = {
+            id: `plan-${Date.now()}`,
+            name: 'My Financial Plan',
+            people: [],
+            assets: [],
+            income: [],
+            commitments: [],
+            events: [],
+            createdAt: new Date().toISOString()
+          }
+          await savePlan(defaultPlan)
+          setCurrentPlan(defaultPlan)
+          setPlanId(defaultPlan.id)
+        }
+      } catch (error) {
+        console.error('Failed to initialize plan:', error)
+      }
+    }
+
+    initializePlan()
+  }, [])
+
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'people', label: 'People', icon: Users },
@@ -53,6 +98,12 @@ function App() {
     { id: 'scenarios', label: 'Scenarios', icon: GitBranch },
     { id: 'settings', label: 'Settings', icon: Settings }
   ]
+
+  const handleImportSuccess = (newPlanId: string) => {
+    // Optionally switch to the imported plan
+    console.log('Plan imported with ID:', newPlanId)
+    // You could load the new plan here if desired
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -118,21 +169,27 @@ function App() {
                   <h3 className="text-sm font-medium">Total Assets</h3>
                 </div>
                 <div className="text-2xl font-bold">£0</div>
-                <p className="text-xs text-muted-foreground">No assets added yet</p>
+                <p className="text-xs text-muted-foreground">
+                  {currentPlan?.assets?.length || 0} assets configured
+                </p>
               </div>
               <div className="bg-card p-6 rounded-lg border">
                 <div className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <h3 className="text-sm font-medium">Monthly Income</h3>
                 </div>
                 <div className="text-2xl font-bold">£0</div>
-                <p className="text-xs text-muted-foreground">No income added yet</p>
+                <p className="text-xs text-muted-foreground">
+                  {currentPlan?.income?.length || 0} income sources
+                </p>
               </div>
               <div className="bg-card p-6 rounded-lg border">
                 <div className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <h3 className="text-sm font-medium">People</h3>
                 </div>
-                <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">No people added yet</p>
+                <div className="text-2xl font-bold">{currentPlan?.people?.length || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  {(currentPlan?.people?.length || 0) === 0 ? 'No people added yet' : 'people in plan'}
+                </p>
               </div>
               <div className="bg-card p-6 rounded-lg border">
                 <div className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -147,6 +204,18 @@ function App() {
             <div className="bg-muted p-4 rounded-lg">
               <h4 className="font-semibold mb-2">System Status</h4>
               <div className="space-y-2 text-sm">
+                <div className="flex items-center">
+                  <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                  IndexedDB Storage: Ready
+                </div>
+                <div className="flex items-center">
+                  <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                  Autosave: {currentPlan ? 'Active' : 'Waiting for data'}
+                </div>
+                <div className="flex items-center">
+                  <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                  Import/Export: Available
+                </div>
                 <div className="flex items-center">
                   <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
                   React + TypeScript: Ready
@@ -169,6 +238,15 @@ function App() {
                 </div>
               </div>
             </div>
+          </div>
+        )
+      case 'settings':
+        return (
+          <div className="space-y-6">
+            <ImportExportDialog 
+              planId={planId ?? undefined}
+              onImportSuccess={handleImportSuccess}
+            />
           </div>
         )
       default:

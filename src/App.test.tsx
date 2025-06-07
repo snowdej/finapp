@@ -1,7 +1,23 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import App from './App'
+
+// Mock the storage service
+vi.mock('./services/storage', () => ({
+  loadAllPlans: vi.fn().mockResolvedValue([]),
+  savePlan: vi.fn().mockResolvedValue('test-plan-id')
+}))
+
+// Mock the autosave hook
+vi.mock('./hooks/useAutosave', () => ({
+  useAutosave: vi.fn()
+}))
+
+// Mock the ImportExportDialog component
+vi.mock('./components/ui/ImportExportDialog', () => ({
+  ImportExportDialog: () => <div>Import/Export Dialog</div>
+}))
 
 describe('App', () => {
   beforeEach(() => {
@@ -54,7 +70,7 @@ describe('App', () => {
     expect(screen.getByLabelText('Navigate to Settings')).toBeInTheDocument()
   })
 
-  it('navigates between tabs', () => {
+  it('navigates between tabs', async () => {
     render(<App />)
     
     // Should start on dashboard
@@ -63,6 +79,10 @@ describe('App', () => {
     // Navigate to People
     fireEvent.click(screen.getByLabelText('Navigate to People'))
     expect(screen.getByText('This section is coming soon...')).toBeInTheDocument()
+    
+    // Navigate to Settings (which shows the ImportExportDialog)
+    fireEvent.click(screen.getByLabelText('Navigate to Settings'))
+    expect(screen.getByText('Import/Export Dialog')).toBeInTheDocument()
     
     // Navigate back to Dashboard
     fireEvent.click(screen.getByLabelText('Navigate to Dashboard'))
@@ -76,11 +96,14 @@ describe('App', () => {
     expect(screen.getByText('Projections & Scenarios')).toBeInTheDocument()
   })
 
-  it('displays summary cards with initial values', () => {
+  it('displays summary cards with initial values', async () => {
     render(<App />)
     
-    // Use more specific selectors for summary cards
-    expect(screen.getByRole('heading', { name: 'Total Assets' })).toBeInTheDocument()
+    // Wait for the component to initialize the plan
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Total Assets' })).toBeInTheDocument()
+    })
+    
     expect(screen.getByRole('heading', { name: 'Monthly Income' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'People' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Scenarios' })).toBeInTheDocument()
@@ -89,9 +112,9 @@ describe('App', () => {
     const zeroValues = screen.getAllByText('£0')
     expect(zeroValues).toHaveLength(2)
     
-    // Check specific descriptive text
-    expect(screen.getByText('No assets added yet')).toBeInTheDocument()
-    expect(screen.getByText('No income added yet')).toBeInTheDocument()
+    // Check specific descriptive text based on the new implementation
+    expect(screen.getByText('0 assets configured')).toBeInTheDocument()
+    expect(screen.getByText('0 income sources')).toBeInTheDocument()
     expect(screen.getByText('No people added yet')).toBeInTheDocument()
     expect(screen.getByText('Base scenario')).toBeInTheDocument()
     
@@ -111,5 +134,14 @@ describe('App', () => {
     // Should start in dark mode
     expect(screen.getByLabelText(/switch to light mode/i)).toHaveTextContent('☀️')
     expect(localStorage.getItem).toHaveBeenCalledWith('theme')
+  })
+
+  it('displays system status information', () => {
+    render(<App />)
+    
+    expect(screen.getByText('System Status')).toBeInTheDocument()
+    expect(screen.getByText('IndexedDB Storage: Ready')).toBeInTheDocument()
+    expect(screen.getByText(/Autosave:/)).toBeInTheDocument()
+    expect(screen.getByText('Import/Export: Available')).toBeInTheDocument()
   })
 })
