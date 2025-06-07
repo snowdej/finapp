@@ -6,7 +6,7 @@
 
 ## High-Level Iterative Blueprint
 
-### 1. Set Up and Scaffold the Project - [ ]
+### 1. Set Up and Scaffold the Project - [x]
 
 * Initialise Vite (or Create React App) with React + TypeScript
 * Configure Tailwind CSS
@@ -14,13 +14,13 @@
 * Set up Recharts and React-Table
 * Set up IndexedDB (using idb library)
 
-### 2. Data Model, Types, and Utilities - [ ]
+### 2. Data Model, Types, and Utilities - [x]
 
 * Define core TypeScript interfaces (Person, Asset, Loan, FinancialItem, Scenario, ChangeLog, Assumptions)
 * Write utility functions for IDs, dates, and deep clones
 * Implement core validation functions
 
-### 3. Core App Layout and Navigation - [ ]
+### 3. Core App Layout and Navigation - [x]
 
 * Build basic app shell: sidebar/tabs, dashboard landing page
 * Implement light/dark mode toggle (with Tailwind/shadcn/ui)
@@ -103,7 +103,7 @@
 
 ## Chunked, Iterative Steps and LLM Code-Gen Prompts
 
-### \[Step 1] — **Project Bootstrap** - [x]
+### \[Step 1] — **Project Bootstrap** - [ ]
 
 ```text
 Create a new Vite (or Create React App) project with React and TypeScript. Add Tailwind CSS, shadcn/ui (or Material UI), Recharts, React-Table, and the idb library for IndexedDB support. Scaffold the src directory structure for components, types, utils, and features.
@@ -123,7 +123,7 @@ Write core utility functions for generating unique IDs (UUID), deep-cloning obje
 
 ---
 
-### \[Step 3] — **App Shell and Navigation** - [ ]
+### \[Step 3] — **App Shell and Navigation** - [x]
 
 ```text
 Implement the app's main layout using shadcn/ui (or Material UI) and Tailwind CSS. Build a sidebar or tab navigation structure with placeholder pages for Dashboard, People, Assets, Income, Commitments, Events, Scenarios, Settings.
