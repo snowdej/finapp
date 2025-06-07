@@ -32,7 +32,7 @@
 * Implement autosave and manual save/export as JSON (browser File API)
 * Implement import (create new plan with GUID, rename on conflict)
 
-### 5. People Management - [ ]
+### 5. People Management - [x]
 
 * List/add/edit/delete people
 * Auto-name if blank

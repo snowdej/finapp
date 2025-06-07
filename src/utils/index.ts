@@ -1,5 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 
+// Re-export everything from validation
+export * from './validation';
+
 /**
  * Generate a unique ID using UUID v4
  */
@@ -16,11 +19,11 @@ export function deepClone<T>(obj: T): T {
   }
   
   if (obj instanceof Date) {
-    return new Date(obj.getTime()) as T;
+    return new Date(obj.getTime()) as unknown as T;
   }
   
   if (Array.isArray(obj)) {
-    return obj.map(item => deepClone(item)) as T;
+    return obj.map(item => deepClone(item)) as unknown as T;
   }
   
   const cloned = {} as T;
@@ -37,16 +40,16 @@ export function deepClone<T>(obj: T): T {
  * Calculate age from date of birth
  */
 export function calculateAge(dateOfBirth: string): number {
-  const birth = new Date(dateOfBirth);
-  const today = new Date();
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
+  const birth = new Date(dateOfBirth)
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const monthDiff = today.getMonth() - birth.getMonth()
   
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--;
+    age--
   }
   
-  return age;
+  return age
 }
 
 /**
@@ -54,7 +57,11 @@ export function calculateAge(dateOfBirth: string): number {
  */
 export function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('en-GB');
+  return d.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
 }
 
 /**
@@ -96,4 +103,20 @@ export function generateDefaultName(baseName: string, existingNames: string[]): 
   }
   
   return name;
+}
+
+/**
+ * Check if person is a child based on age
+ */
+export function isChild(dateOfBirth: string): boolean {
+  const birth = new Date(dateOfBirth)
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const monthDiff = today.getMonth() - birth.getMonth()
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--
+  }
+  
+  return age < 18
 }

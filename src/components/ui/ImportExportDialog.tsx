@@ -1,33 +1,38 @@
 import { useState } from 'react'
 import { Button } from './button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card'
-import { Download, Upload, AlertCircle } from 'lucide-react'
-import { downloadPlanAsJSON, importPlanFromFile } from '../../services/storage'
+import { exportPlanAsJSON, importPlanFromJSON } from '../../services/storage'
+import { Download, Upload } from 'lucide-react'
 
 interface ImportExportDialogProps {
   planId?: string
-  onImportSuccess?: (planId: string) => void
+  onImportSuccess?: (newPlanId: string) => void
   onClose?: () => void
 }
-
 export function ImportExportDialog({ planId, onImportSuccess, onClose }: ImportExportDialogProps) {
   const [isExporting, setIsExporting] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
 
   const handleExport = async () => {
     if (!planId) return
-    
+
     setIsExporting(true)
-    setError(null)
-    
     try {
-      await downloadPlanAsJSON(planId)
-      setSuccess('Plan exported successfully!')
+      const jsonData = await exportPlanAsJSON(planId)
+      
+      // Create and download file
+      const blob = new Blob([jsonData], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `financial-plan-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
     } catch (error) {
-      setError('Failed to export plan. Please try again.')
-      console.error('Export error:', error)
+      console.error('Export failed:', error)
     } finally {
       setIsExporting(false)
     }
@@ -38,19 +43,18 @@ export function ImportExportDialog({ planId, onImportSuccess, onClose }: ImportE
     if (!file) return
 
     setIsImporting(true)
-    setError(null)
-    setSuccess(null)
+    setImportError(null)
 
     try {
-      const newPlanId = await importPlanFromFile(file)
-      setSuccess('Plan imported successfully!')
+      const text = await file.text()
+      const newPlanId = await importPlanFromJSON(text)
       onImportSuccess?.(newPlanId)
     } catch (error) {
-      setError('Failed to import plan. Please check the file format.')
-      console.error('Import error:', error)
+      setImportError('Failed to import plan. Please check the file format.')
+      console.error('Import failed:', error)
     } finally {
       setIsImporting(false)
-      // Clear the input
+      // Reset file input
       event.target.value = ''
     }
   }
@@ -58,28 +62,13 @@ export function ImportExportDialog({ planId, onImportSuccess, onClose }: ImportE
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Import & Export</h2>
-        <p className="text-muted-foreground">
-          Save your financial plans as JSON files or import existing plans.
+        <h2 className="text-3xl font-bold tracking-tight">Import & Export</h2>
+        <p className="text-muted-foreground mt-2">
+          Save your plan to a file or import an existing plan
         </p>
       </div>
 
-      {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-          <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-          <span className="text-sm text-red-700 dark:text-red-300">{error}</span>
-        </div>
-      )}
-
-      {success && (
-        <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-          <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-          <span className="text-sm text-green-700 dark:text-green-300">{success}</span>
-        </div>
-      )}
-
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Export */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -87,7 +76,7 @@ export function ImportExportDialog({ planId, onImportSuccess, onClose }: ImportE
               Export Plan
             </CardTitle>
             <CardDescription>
-              Download your current financial plan as a JSON file for backup or sharing.
+              Download your current financial plan as a JSON file
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -96,12 +85,11 @@ export function ImportExportDialog({ planId, onImportSuccess, onClose }: ImportE
               disabled={!planId || isExporting}
               className="w-full"
             >
-              {isExporting ? 'Exporting...' : 'Export Current Plan'}
+              {isExporting ? 'Exporting...' : 'Export Plan'}
             </Button>
           </CardContent>
         </Card>
 
-        {/* Import */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -109,32 +97,25 @@ export function ImportExportDialog({ planId, onImportSuccess, onClose }: ImportE
               Import Plan
             </CardTitle>
             <CardDescription>
-              Upload a previously exported JSON file to create a new financial plan.
+              Upload a previously exported financial plan
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <label htmlFor="import-file" className="block text-sm font-medium mb-2">
-                Select JSON file to import
-              </label>
-              <input
-                id="import-file"
-                type="file"
-                accept=".json"
-                onChange={handleImport}
-                disabled={isImporting}
-                className="block w-full text-sm text-muted-foreground
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-md file:border-0
-                  file:text-sm file:font-medium
-                  file:bg-primary file:text-primary-foreground
-                  hover:file:bg-primary/90
-                  file:disabled:opacity-50"
-              />
-              {isImporting && (
-                <p className="text-sm text-muted-foreground">Importing...</p>
-              )}
-            </div>
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleImport}
+              disabled={isImporting}
+              placeholder="Choose a JSON file to import"
+              aria-label="Import financial plan file"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+            {importError && (
+              <p className="text-sm text-destructive">{importError}</p>
+            )}
+            {isImporting && (
+              <p className="text-sm text-muted-foreground">Importing...</p>
+            )}
           </CardContent>
         </Card>
       </div>

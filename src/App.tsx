@@ -17,6 +17,8 @@ import { Button } from './components/ui/button'
 import { ImportExportDialog } from './components/ui/ImportExportDialog'
 import { loadAllPlans, savePlan } from './services/storage'
 import { useAutosave } from './hooks/useAutosave'
+import { PeopleManager } from './components/people/PeopleManager'
+import { Person } from './types'
 
 type TabId = 'dashboard' | 'people' | 'assets' | 'income' | 'commitments' | 'events' | 'scenarios' | 'settings'
 
@@ -103,6 +105,14 @@ function App() {
     // Optionally switch to the imported plan
     console.log('Plan imported with ID:', newPlanId)
     // You could load the new plan here if desired
+  }
+
+  const handleUpdatePeople = (people: Person[]) => {
+    if (currentPlan) {
+      const updatedPlan = { ...currentPlan, people }
+      setCurrentPlan(updatedPlan)
+      // Auto-save will be triggered by useAutosave hook
+    }
   }
 
   const renderContent = () => {
@@ -239,6 +249,13 @@ function App() {
               </div>
             </div>
           </div>
+        )
+      case 'people':
+        return (
+          <PeopleManager
+            people={currentPlan?.people || []}
+            onUpdatePeople={handleUpdatePeople}
+          />
         )
       case 'settings':
         return (
