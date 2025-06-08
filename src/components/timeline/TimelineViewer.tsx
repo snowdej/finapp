@@ -348,7 +348,7 @@ export function TimelineViewer({ planId, onRevert }: TimelineViewerProps) {
                       setSelectedEntry(selectedEntry?.id === entry.id ? null : entry)
                     }
                   }}
-                  aria-expanded={selectedEntry?.id === entry.id}
+                  aria-expanded={selectedEntry?.id === entry.id ? "true" : "false"}
                   aria-label={`Timeline entry: ${entry.summary}. ${selectedEntry?.id === entry.id ? 'Expanded' : 'Collapsed'}. Press Enter to ${selectedEntry?.id === entry.id ? 'collapse' : 'expand'}.`}
                 >
                   <div className="flex items-start justify-between">
