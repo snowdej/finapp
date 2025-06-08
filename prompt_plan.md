@@ -62,7 +62,7 @@
 * Edit plan-wide and category/item overrides for inflation/growth
 * Precedence logic: plan < category < item
 
-### 10. Scenario System - [ ]
+### 10. Scenario System - [x]
 
 * List scenarios, create/copy, switch between
 * Apply changes only to selected scenario
@@ -193,7 +193,7 @@ Test all override flows and calculation logic.
 
 ---
 
-### \[Step 10] — **Scenario System** - [ ]
+### \[Step 10] — **Scenario System** - [x]
 
 ```text
 Implement scenario management: list scenarios, create/copy, switch active scenario. Mark base scenario. Changes should only apply to the selected scenario. Ensure correct context is preserved when switching.

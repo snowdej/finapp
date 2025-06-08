@@ -27,8 +27,9 @@ import { getDefaultAssumptions } from './utils/assumptions'
 import { generateId } from './utils/validation'
 import { Person, Asset, Income, Commitment, Event, PlanAssumptions, AssumptionOverride, Scenario } from './types'
 import { ScenarioManager } from './components/scenarios/ScenarioManager'
+import { ProjectionEngine } from './components/projections/ProjectionEngine'
 
-type TabId = 'dashboard' | 'people' | 'assets' | 'income' | 'commitments' | 'events' | 'scenarios' | 'settings'
+type TabId = 'dashboard' | 'people' | 'assets' | 'income' | 'commitments' | 'events' | 'scenarios' | 'projections' | 'settings'
 
 interface NavItem {
   id: TabId;
@@ -155,6 +156,7 @@ function App() {
     { id: 'commitments', label: 'Commitments', icon: CreditCard },
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'scenarios', label: 'Scenarios', icon: GitBranch },
+    { id: 'projections', label: 'Projections', icon: TrendingUp },
     { id: 'settings', label: 'Settings', icon: Settings }
   ]
 
@@ -395,6 +397,14 @@ function App() {
             commitments={currentPlan?.commitments || []}
             onUpdateScenarios={handleUpdateScenarios}
             onSetActiveScenario={handleSetActiveScenario}
+          />
+        )
+      case 'projections':
+        const activeScenario = currentPlan?.scenarios?.find(s => s.id === currentPlan?.activeScenarioId)
+        return (
+          <ProjectionEngine
+            plan={currentPlan}
+            activeScenario={activeScenario}
           />
         )
       case 'settings':
