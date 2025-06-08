@@ -190,3 +190,5 @@ export interface ChangeLog {
   data: any
 }
 
+type TabId = 'dashboard' | 'people' | 'assets' | 'income' | 'commitments' | 'events' | 'scenarios' | 'projections' | 'settings'
+

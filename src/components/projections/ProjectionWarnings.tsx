@@ -1,8 +1,8 @@
 import { ProjectionSummary, getWarningsBySeverity } from '../../utils/calculations'
 import { FinancialPlan } from '../../types'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
-import { Alert, AlertDescription } from '../ui/alert.tsx'
-import { AlertTriangle, AlertCircle, Info, XCircle } from 'lucide-react'
+import { Badge } from '../ui/badge'
+import { AlertTriangle, AlertCircle, Info, CheckCircle } from 'lucide-react'
 
 interface ProjectionWarningsProps {
   projectionSummary: ProjectionSummary
@@ -16,33 +16,22 @@ export function ProjectionWarnings({ projectionSummary, plan }: ProjectionWarnin
   const getSeverityIcon = (severity: 'low' | 'medium' | 'high') => {
     switch (severity) {
       case 'high':
-        return <XCircle className="h-4 w-4" />
+        return <AlertTriangle className="h-4 w-4 text-red-600" />
       case 'medium':
-        return <AlertTriangle className="h-4 w-4" />
+        return <AlertCircle className="h-4 w-4 text-orange-600" />
       case 'low':
-        return <Info className="h-4 w-4" />
+        return <Info className="h-4 w-4 text-blue-600" />
     }
   }
 
   const getSeverityColor = (severity: 'low' | 'medium' | 'high') => {
     switch (severity) {
       case 'high':
-        return 'text-red-600 bg-red-50 border-red-200'
+        return 'bg-red-100 text-red-800 border-red-200'
       case 'medium':
-        return 'text-orange-600 bg-orange-50 border-orange-200'
+        return 'bg-orange-100 text-orange-800 border-orange-200'
       case 'low':
-        return 'text-blue-600 bg-blue-50 border-blue-200'
-    }
-  }
-
-  const getSeverityLabel = (severity: 'low' | 'medium' | 'high') => {
-    switch (severity) {
-      case 'high':
-        return 'Critical Issues'
-      case 'medium':
-        return 'Important Warnings'
-      case 'low':
-        return 'Minor Notices'
+        return 'bg-blue-100 text-blue-800 border-blue-200'
     }
   }
 
@@ -50,10 +39,10 @@ export function ProjectionWarnings({ projectionSummary, plan }: ProjectionWarnin
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <AlertCircle className="h-12 w-12 text-green-500 mb-4" />
-          <h3 className="text-lg font-semibold mb-2 text-green-700">No Issues Detected</h3>
+          <CheckCircle className="h-12 w-12 text-green-600 mb-4" />
+          <h3 className="text-lg font-semibold mb-2 text-green-700">All Clear!</h3>
           <p className="text-muted-foreground text-center">
-            Your financial projections look healthy with no warnings or issues detected.
+            No warnings detected in your financial projections. Your plan looks solid!
           </p>
         </CardContent>
       </Card>
@@ -62,37 +51,63 @@ export function ProjectionWarnings({ projectionSummary, plan }: ProjectionWarnin
 
   return (
     <div className="space-y-6">
-      {/* Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
-            Projection Warnings Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-orange-600">{totalWarnings}</div>
-              <div className="text-sm text-muted-foreground">Total Warnings</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-red-600">{warningsBySeverity.high.length}</div>
-              <div className="text-sm text-muted-foreground">Critical Issues</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-orange-600">{warningsBySeverity.medium.length}</div>
-              <div className="text-sm text-muted-foreground">Important Warnings</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-600">{warningsBySeverity.low.length}</div>
-              <div className="text-sm text-muted-foreground">Minor Notices</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-2xl font-bold">Projection Warnings & Issues</h3>
+          <p className="text-muted-foreground mt-2">
+            {totalWarnings} warning{totalWarnings !== 1 ? 's' : ''} detected across your financial projections
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Badge variant="destructive">{warningsBySeverity.high.length} High</Badge>
+          <Badge variant="default" className="bg-orange-600">{warningsBySeverity.medium.length} Medium</Badge>
+          <Badge variant="secondary">{warningsBySeverity.low.length} Low</Badge>
+        </div>
+      </div>
 
-      {/* Warnings by Severity */}
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-red-700">
+              <AlertTriangle className="h-5 w-5" />
+              High Priority
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-700">{warningsBySeverity.high.length}</div>
+            <p className="text-sm text-red-600">Critical issues requiring immediate attention</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-orange-700">
+              <AlertCircle className="h-5 w-5" />
+              Medium Priority
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-700">{warningsBySeverity.medium.length}</div>
+            <p className="text-sm text-orange-600">Issues that should be reviewed</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-blue-700">
+              <Info className="h-5 w-5" />
+              Low Priority
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-700">{warningsBySeverity.low.length}</div>
+            <p className="text-sm text-blue-600">Minor issues for awareness</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Detailed Warnings */}
       {(['high', 'medium', 'low'] as const).map(severity => {
         const warnings = warningsBySeverity[severity]
         if (warnings.length === 0) return null
@@ -102,22 +117,29 @@ export function ProjectionWarnings({ projectionSummary, plan }: ProjectionWarnin
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 {getSeverityIcon(severity)}
-                {getSeverityLabel(severity)} ({warnings.length})
+                {severity.charAt(0).toUpperCase() + severity.slice(1)} Priority Issues
+                <Badge variant="outline">{warnings.length}</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {warnings.map((warning, index) => (
-                  <Alert key={index} className={getSeverityColor(severity)}>
-                    <AlertDescription className="flex items-center justify-between">
-                      <div>
-                        <strong>Year {warning.year}:</strong> {warning.message}
+                  <div
+                    key={index}
+                    className={`p-4 border rounded-lg ${getSeverityColor(severity)}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium">Year {warning.year}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {warning.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </Badge>
+                        </div>
+                        <p className="text-sm">{warning.message}</p>
                       </div>
-                      <div className="text-xs text-muted-foreground ml-4">
-                        {warning.type.replace('_', ' ').toUpperCase()}
-                      </div>
-                    </AlertDescription>
-                  </Alert>
+                    </div>
+                  </div>
                 ))}
               </div>
             </CardContent>
@@ -128,91 +150,53 @@ export function ProjectionWarnings({ projectionSummary, plan }: ProjectionWarnin
       {/* Recommendations */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Info className="h-5 w-5 text-blue-600" />
-            Recommendations
-          </CardTitle>
+          <CardTitle>Recommendations</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {warningsBySeverity.high.length > 0 && (
-              <Alert className="border-red-200 bg-red-50">
-                <XCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-700">
-                  <strong>Critical Issues Detected:</strong> Review assets with negative balances. 
-                  Consider adjusting assumptions or increasing income sources to prevent financial shortfalls.
-                </AlertDescription>
-              </Alert>
+              <div className="p-4 border-l-4 border-red-500 bg-red-50">
+                <h4 className="font-semibold text-red-700 mb-2">High Priority Actions</h4>
+                <ul className="text-sm text-red-600 space-y-1">
+                  <li>• Review negative asset balances and adjust withdrawal strategies</li>
+                  <li>• Consider increasing income or reducing commitments</li>
+                  <li>• Validate unrealistic growth rate assumptions</li>
+                </ul>
+              </div>
             )}
-            
+
             {warningsBySeverity.medium.length > 0 && (
-              <Alert className="border-orange-200 bg-orange-50">
-                <AlertTriangle className="h-4 w-4 text-orange-600" />
-                <AlertDescription className="text-orange-700">
-                  <strong>Important Warnings:</strong> Some projections show unusual patterns. 
-                  Verify growth rates and check for data entry errors.
-                </AlertDescription>
-              </Alert>
+              <div className="p-4 border-l-4 border-orange-500 bg-orange-50">
+                <h4 className="font-semibold text-orange-700 mb-2">Medium Priority Actions</h4>
+                <ul className="text-sm text-orange-600 space-y-1">
+                  <li>• Review negative income or commitment values</li>
+                  <li>• Consider scenario planning for different outcomes</li>
+                  <li>• Validate data entry for accuracy</li>
+                </ul>
+              </div>
             )}
 
-            <Alert className="border-blue-200 bg-blue-50">
-              <Info className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-700">
-                <strong>Regular Review:</strong> Update your assumptions annually and after major life events. 
-                Consider creating multiple scenarios to explore different possibilities.
-              </AlertDescription>
-            </Alert>
-          </div>
-        </CardContent>
-      </Card>
+            {warningsBySeverity.low.length > 0 && (
+              <div className="p-4 border-l-4 border-blue-500 bg-blue-50">
+                <h4 className="font-semibold text-blue-700 mb-2">General Recommendations</h4>
+                <ul className="text-sm text-blue-600 space-y-1">
+                  <li>• Monitor projections regularly and update assumptions</li>
+                  <li>• Consider creating multiple scenarios for comparison</li>
+                  <li>• Review and update your plan annually</li>
+                </ul>
+              </div>
+            )}
 
-      {/* Warning Details by Year */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Warnings by Year</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Year</th>
-                  <th className="text-left p-2">Type</th>
-                  <th className="text-left p-2">Severity</th>
-                  <th className="text-left p-2">Message</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projectionSummary.snapshots
-                  .filter(snapshot => snapshot.warnings.length > 0)
-                  .flatMap(snapshot => 
-                    snapshot.warnings.map(warning => ({ ...warning, year: snapshot.year }))
-                  )
-                  .sort((a, b) => a.year - b.year)
-                  .map((warning, index) => (
-                    <tr key={index} className="border-b hover:bg-muted/50">
-                      <td className="p-2 font-medium">{warning.year}</td>
-                      <td className="p-2">
-                        <span className="capitalize">
-                          {warning.type.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="p-2">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
-                          warning.severity === 'high' ? 'bg-red-100 text-red-800' :
-                          warning.severity === 'medium' ? 'bg-orange-100 text-orange-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {getSeverityIcon(warning.severity)}
-                          {warning.severity.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="p-2">{warning.message}</td>
-                    </tr>
-                  ))
-                }
-              </tbody>
-            </table>
+            {totalWarnings === 0 && (
+              <div className="p-4 border-l-4 border-green-500 bg-green-50">
+                <h4 className="font-semibold text-green-700 mb-2">Excellent Planning!</h4>
+                <ul className="text-sm text-green-600 space-y-1">
+                  <li>• Your projections look healthy with no major issues</li>
+                  <li>• Continue monitoring and updating your plan regularly</li>
+                  <li>• Consider stress-testing with different scenarios</li>
+                </ul>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

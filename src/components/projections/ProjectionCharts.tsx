@@ -3,8 +3,25 @@ import { ProjectionSummary, calculateNetWorthProgression, calculateCashFlowProgr
 import { FinancialPlan } from '../../types'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts'
-import { TrendingUp, TrendingDown, DollarSign, PieChart as PieChartIcon, BarChart3, Download } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts'
+import { TrendingUp, PieChart as PieChartIcon, BarChart3, Download } from 'lucide-react'
 
 interface ProjectionChartsProps {
   projectionSummary: ProjectionSummary
@@ -12,476 +29,467 @@ interface ProjectionChartsProps {
 }
 
 export function ProjectionCharts({ projectionSummary, plan }: ProjectionChartsProps) {
-  const [selectedChartPeriod, setSelectedChartPeriod] = useState<'all' | '10' | '20' | '30'>('20')
-  
-  // Filter data based on selected period
-  const getFilteredData = (period: string) => {
-    const maxYears = period === 'all' ? projectionSummary.snapshots.length : parseInt(period)
-    return projectionSummary.snapshots.slice(0, maxYears)
-  }
-  
-  const filteredSnapshots = getFilteredData(selectedChartPeriod)
+  const [selectedYear, setSelectedYear] = useState(projectionSummary.snapshots[Math.floor(projectionSummary.snapshots.length / 2)]?.year || new Date().getFullYear())
 
   // Prepare data for charts
-  const netWorthData = filteredSnapshots.map(snapshot => ({
+  const timelineData = projectionSummary.snapshots.map(snapshot => ({
     year: snapshot.year,
-    netWorth: Math.round(snapshot.netWorth),
-    assets: Math.round(snapshot.totalAssets),
-    income: Math.round(snapshot.totalIncome),
-    commitments: Math.round(snapshot.totalCommitments),
-    cashFlow: Math.round(snapshot.cashFlow)
+    netWorth: snapshot.netWorth,
+    totalAssets: snapshot.totalAssets,
+    totalIncome: snapshot.totalIncome,
+    totalCommitments: Math.abs(snapshot.totalCommitments),
+    cashFlow: snapshot.cashFlow
   }))
 
-  const cashFlowData = filteredSnapshots.map(snapshot => ({
-    year: snapshot.year,
-    cashFlow: Math.round(snapshot.cashFlow),
-    income: Math.round(snapshot.totalIncome),
-    commitments: Math.round(-snapshot.totalCommitments),
-    netIncome: Math.round(snapshot.totalIncome - snapshot.totalCommitments)
-  }))
+  const selectedSnapshot = projectionSummary.snapshots.find(s => s.year === selectedYear)
+  const assetBreakdownData = selectedSnapshot ? Object.entries(selectedSnapshot.assetsByCategory).map(([category, value]) => ({
+    name: category,
+    value: Math.max(0, value),
+    percentage: ((value / selectedSnapshot.totalAssets) * 100).toFixed(1)
+  })).filter(item => item.value > 0) : []
 
-  // Asset breakdown data for current year and final year
-  const currentSnapshot = projectionSummary.snapshots[0]
-  const finalSnapshot = projectionSummary.snapshots[projectionSummary.snapshots.length - 1]
-  
-  const currentAssetBreakdown = Object.entries(currentSnapshot?.assetsByCategory || {})
-    .filter(([_, value]) => value > 0)
-    .map(([category, value]) => ({
-      name: category,
-      value: Math.round(value),
-      percentage: Math.round((value / currentSnapshot.totalAssets) * 100)
-    }))
-
-  const finalAssetBreakdown = Object.entries(finalSnapshot?.assetsByCategory || {})
-    .filter(([_, value]) => value > 0)
-    .map(([category, value]) => ({
-      name: category,
-      value: Math.round(value),
-      percentage: Math.round((value / finalSnapshot.totalAssets) * 100)
-    }))
-
-  // Asset growth over time data
-  const assetGrowthData = filteredSnapshots.map(snapshot => {
+  // Category trends over time
+  const categoryTrendsData = projectionSummary.snapshots.map(snapshot => {
     const data: any = { year: snapshot.year }
     Object.entries(snapshot.assetsByCategory).forEach(([category, value]) => {
-      data[category] = Math.round(value)
+      if (value > 0) {
+        data[category] = value
+      }
     })
     return data
   })
 
-  // Get unique asset categories for chart colors
-  const assetCategories = Object.keys(currentSnapshot?.assetsByCategory || {})
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B6B', '#4ECDC4', '#45B7D1']
+  const colors = [
+    '#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00',
+    '#0088fe', '#00c49f', '#ffbb28', '#ff8042', '#8dd1e1'
+  ]
 
   const formatCurrency = (value: number) => {
-    if (Math.abs(value) >= 1000000) {
+    if (value >= 1000000) {
       return `£${(value / 1000000).toFixed(1)}M`
-    } else if (Math.abs(value) >= 1000) {
+    } else if (value >= 1000) {
       return `£${(value / 1000).toFixed(0)}K`
     }
     return `£${value.toLocaleString()}`
   }
 
-  const formatTooltip = (value: number, name: string) => {
-    return [formatCurrency(value), name]
-  }
+  const formatYear = (year: number) => `'${year.toString().slice(-2)}`
 
-  const exportChartData = (chartType: string) => {
-    let dataToExport: any[] = []
-    let filename = ''
-
-    switch (chartType) {
-      case 'networth':
-        dataToExport = netWorthData
-        filename = 'net-worth-projection'
-        break
-      case 'cashflow':
-        dataToExport = cashFlowData
-        filename = 'cash-flow-projection'
-        break
-      case 'assets':
-        dataToExport = assetGrowthData
-        filename = 'asset-growth-projection'
-        break
-      default:
-        return
-    }
-
-    const csvContent = [
-      Object.keys(dataToExport[0]).join(','),
-      ...dataToExport.map(row => Object.values(row).join(','))
-    ].join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${filename}-${selectedChartPeriod}years.csv`
-    link.click()
-    URL.revokeObjectURL(url)
+  const downloadChart = (chartName: string) => {
+    // This would normally require a library like html2canvas
+    // For now, we'll just show an alert
+    alert(`Download functionality for ${chartName} would be implemented here`)
   }
 
   return (
     <div className="space-y-6">
-      {/* Chart Controls */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Chart Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium">Time Period:</label>
-            <div className="flex gap-2">
-              {['10', '20', '30', 'all'].map(period => (
-                <Button
-                  key={period}
-                  variant={selectedChartPeriod === period ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedChartPeriod(period as any)}
-                >
-                  {period === 'all' ? 'All Years' : `${period} Years`}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Net Worth Progression */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Net Worth & Asset Progression
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => exportChartData('networth')}
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
-            <ComposedChart data={netWorthData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="year" />
-              <YAxis tickFormatter={formatCurrency} />
-              <Tooltip formatter={formatTooltip} />
-              <Legend />
-              <Area 
-                type="monotone" 
-                dataKey="assets" 
-                fill="#8884d8" 
-                fillOpacity={0.3}
-                stroke="#8884d8"
-                name="Total Assets"
-              />
-              <Line 
-                type="monotone" 
-                dataKey="netWorth" 
-                stroke="#FF8042" 
-                strokeWidth={3}
-                name="Net Worth"
-                dot={{ fill: '#FF8042', strokeWidth: 2, r: 4 }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Cash Flow Analysis */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Cash Flow Analysis
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => exportChartData('cashflow')}
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
-            <ComposedChart data={cashFlowData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="year" />
-              <YAxis tickFormatter={formatCurrency} />
-              <Tooltip formatter={formatTooltip} />
-              <Legend />
-              <Bar 
-                dataKey="income" 
-                fill="#00C49F" 
-                name="Annual Income"
-                fillOpacity={0.8}
-              />
-              <Bar 
-                dataKey="commitments" 
-                fill="#FF8042" 
-                name="Annual Commitments"
-                fillOpacity={0.8}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="cashFlow" 
-                stroke="#8884d8" 
-                strokeWidth={3}
-                name="Net Cash Flow"
-                dot={{ fill: '#8884d8', strokeWidth: 2, r: 3 }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Asset Growth Over Time */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Asset Growth by Category
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => exportChartData('assets')}
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
-            <AreaChart data={assetGrowthData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="year" />
-              <YAxis tickFormatter={formatCurrency} />
-              <Tooltip formatter={formatTooltip} />
-              <Legend />
-              {assetCategories.map((category, index) => (
-                <Area
-                  key={category}
-                  type="monotone"
-                  dataKey={category}
-                  stackId="1"
-                  stroke={COLORS[index % COLORS.length]}
-                  fill={COLORS[index % COLORS.length]}
-                  fillOpacity={0.7}
-                />
-              ))}
-            </AreaChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Current Asset Allocation */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PieChartIcon className="h-5 w-5" />
-              Current Asset Allocation
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {currentAssetBreakdown.length > 0 ? (
-              <div className="space-y-4">
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={currentAssetBreakdown}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percentage }) => `${name} (${percentage}%)`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {currentAssetBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Value']} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-2">
-                  {currentAssetBreakdown.map((item, index) => (
-                    <div key={item.name} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                        />
-                        <span>{item.name}</span>
-                      </div>
-                      <span className="font-medium">{formatCurrency(item.value)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                No assets to display
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Projected Asset Allocation */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PieChartIcon className="h-5 w-5" />
-              Projected Asset Allocation ({finalSnapshot?.year})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {finalAssetBreakdown.length > 0 ? (
-              <div className="space-y-4">
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={finalAssetBreakdown}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percentage }) => `${name} (${percentage}%)`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {finalAssetBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Value']} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-2">
-                  {finalAssetBreakdown.map((item, index) => (
-                    <div key={item.name} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                        />
-                        <span>{item.name}</span>
-                      </div>
-                      <span className="font-medium">{formatCurrency(item.value)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                No projected assets
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-between">
+        <h3 className="text-2xl font-bold">Financial Charts & Analysis</h3>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => downloadChart('All Charts')}>
+            <Download className="h-4 w-4 mr-2" />
+            Export Charts
+          </Button>
+        </div>
       </div>
 
-      {/* Key Metrics Comparison */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Key Financial Metrics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {formatCurrency(Math.max(...netWorthData.map(d => d.netWorth)))}
-              </div>
-              <div className="text-sm text-muted-foreground">Peak Net Worth</div>
-              <div className="text-xs text-muted-foreground">
-                Year {netWorthData.find(d => d.netWorth === Math.max(...netWorthData.map(d => d.netWorth)))?.year}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(Math.max(...cashFlowData.map(d => d.cashFlow)))}
-              </div>
-              <div className="text-sm text-muted-foreground">Peak Cash Flow</div>
-              <div className="text-xs text-muted-foreground">
-                Year {cashFlowData.find(d => d.cashFlow === Math.max(...cashFlowData.map(d => d.cashFlow)))?.year}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                {Math.round(((finalSnapshot?.netWorth || 0) - (currentSnapshot?.netWorth || 0)) / (currentSnapshot?.netWorth || 1) * 100)}%
-              </div>
-              <div className="text-sm text-muted-foreground">Total Growth</div>
-              <div className="text-xs text-muted-foreground">
-                {currentSnapshot?.year} to {finalSnapshot?.year}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {Math.round(filteredSnapshots.reduce((sum, s) => sum + s.cashFlow, 0) / filteredSnapshots.length) > 0 ? 
-                  Math.round(filteredSnapshots.filter(s => s.cashFlow > 0).length / filteredSnapshots.length * 100) :
-                  0
-                }%
-              </div>
-              <div className="text-sm text-muted-foreground">Positive Cash Flow</div>
-              <div className="text-xs text-muted-foreground">
-                Percentage of years
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="timeline" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="timeline" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Timeline
+          </TabsTrigger>
+          <TabsTrigger value="breakdown" className="flex items-center gap-2">
+            <PieChartIcon className="h-4 w-4" />
+            Breakdown
+          </TabsTrigger>
+          <TabsTrigger value="trends" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Trends
+          </TabsTrigger>
+          <TabsTrigger value="analysis" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Analysis
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Year-over-Year Growth Rates */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Year-over-Year Growth Rates
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={netWorthData.slice(1, 11).map((current, index) => {
-              const previous = netWorthData[index]
-              const growthRate = previous.netWorth > 0 ? 
-                ((current.netWorth - previous.netWorth) / previous.netWorth * 100) : 0
-              const assetGrowthRate = previous.assets > 0 ? 
-                ((current.assets - previous.assets) / previous.assets * 100) : 0
-              
-              return {
-                year: current.year,
-                netWorthGrowth: Math.round(growthRate * 100) / 100,
-                assetGrowth: Math.round(assetGrowthRate * 100) / 100
-              }
-            })}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="year" />
-              <YAxis label={{ value: 'Growth Rate (%)', angle: -90, position: 'insideLeft' }} />
-              <Tooltip formatter={(value: number) => [`${value}%`, 'Growth Rate']} />
-              <Legend />
-              <Bar dataKey="netWorthGrowth" fill="#8884d8" name="Net Worth Growth %" />
-              <Bar dataKey="assetGrowth" fill="#82ca9d" name="Asset Growth %" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+        <TabsContent value="timeline">
+          <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+            {/* Net Worth Over Time */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Net Worth Progression
+                  <Button variant="ghost" size="sm" onClick={() => downloadChart('Net Worth')}>
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={timelineData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" tickFormatter={formatYear} />
+                    <YAxis tickFormatter={formatCurrency} />
+                    <Tooltip
+                      formatter={(value: number) => [formatCurrency(value), 'Net Worth']}
+                      labelFormatter={(year) => `Year ${year}`}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="netWorth"
+                      stroke="#8884d8"
+                      strokeWidth={3}
+                      dot={{ fill: '#8884d8', strokeWidth: 2, r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Cash Flow Over Time */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Annual Cash Flow
+                  <Button variant="ghost" size="sm" onClick={() => downloadChart('Cash Flow')}>
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={timelineData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" tickFormatter={formatYear} />
+                    <YAxis tickFormatter={formatCurrency} />
+                    <Tooltip
+                      formatter={(value: number) => [formatCurrency(value), 'Cash Flow']}
+                      labelFormatter={(year) => `Year ${year}`}
+                    />
+                    <Bar
+                      dataKey="cashFlow"
+                      fill={(dataPoint: any) => dataPoint.cashFlow >= 0 ? '#82ca9d' : '#ff7300'}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Income vs Commitments */}
+            <Card className="md:col-span-1 lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Income vs Commitments
+                  <Button variant="ghost" size="sm" onClick={() => downloadChart('Income vs Commitments')}>
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <AreaChart data={timelineData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" tickFormatter={formatYear} />
+                    <YAxis tickFormatter={formatCurrency} />
+                    <Tooltip
+                      formatter={(value: number, name: string) => [formatCurrency(value), name]}
+                      labelFormatter={(year) => `Year ${year}`}
+                    />
+                    <Legend />
+                    <Area
+                      type="monotone"
+                      dataKey="totalIncome"
+                      stackId="1"
+                      stroke="#82ca9d"
+                      fill="#82ca9d"
+                      name="Income"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="totalCommitments"
+                      stackId="2"
+                      stroke="#ff7300"
+                      fill="#ff7300"
+                      name="Commitments"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="breakdown">
+          <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+            {/* Asset Breakdown Pie Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Asset Allocation ({selectedYear})
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                      className="text-sm border rounded px-2 py-1"
+                      aria-label="Select year for asset allocation"
+                    >
+                      {projectionSummary.snapshots.map(snapshot => (
+                        <option key={snapshot.year} value={snapshot.year}>
+                          {snapshot.year}
+                        </option>
+                      ))}
+                    </select>
+                    <Button variant="ghost" size="sm" onClick={() => downloadChart('Asset Breakdown')}>
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={350}>
+                  <PieChart>
+                    <Pie
+                      data={assetBreakdownData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percentage }) => `${name}: ${percentage}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {assetBreakdownData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Asset Breakdown Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Asset Details ({selectedYear})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {assetBreakdownData.map((item, index) => (
+                    <div key={item.name} className="flex items-center justify-between p-3 border rounded">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-4 h-4 rounded"
+                          style={{ backgroundColor: colors[index % colors.length] }}
+                        />
+                        <span className="font-medium">{item.name}</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold">{formatCurrency(item.value)}</div>
+                        <div className="text-sm text-muted-foreground">{item.percentage}%</div>
+                      </div>
+                    </div>
+                  ))}
+                  {assetBreakdownData.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No assets with positive values in {selectedYear}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="trends">
+          <div className="space-y-6">
+            {/* Category Trends */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Asset Category Trends
+                  <Button variant="ghost" size="sm" onClick={() => downloadChart('Category Trends')}>
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <AreaChart data={categoryTrendsData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" tickFormatter={formatYear} />
+                    <YAxis tickFormatter={formatCurrency} />
+                    <Tooltip
+                      formatter={(value: number, name: string) => [formatCurrency(value), name]}
+                      labelFormatter={(year) => `Year ${year}`}
+                    />
+                    <Legend />
+                    {Object.keys(projectionSummary.categoryTotals).map((category, index) => (
+                      <Area
+                        key={category}
+                        type="monotone"
+                        dataKey={category}
+                        stackId="1"
+                        stroke={colors[index % colors.length]}
+                        fill={colors[index % colors.length]}
+                      />
+                    ))}
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Growth Rate Analysis */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Growth Rate Analysis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {Object.entries(projectionSummary.categoryTotals).map(([category, yearlyValues]) => {
+                    const years = Object.keys(yearlyValues).map(Number).sort()
+                    const startValue = yearlyValues[years[0]] || 0
+                    const endValue = yearlyValues[years[years.length - 1]] || 0
+                    const totalGrowth = startValue > 0 ? ((endValue - startValue) / startValue) * 100 : 0
+                    const annualGrowth = years.length > 1 ? Math.pow(endValue / startValue, 1 / (years.length - 1)) - 1 : 0
+
+                    return (
+                      <div key={category} className="p-4 border rounded-lg">
+                        <h4 className="font-semibold mb-2">{category}</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Start Value:</span>
+                            <span>{formatCurrency(startValue)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>End Value:</span>
+                            <span>{formatCurrency(endValue)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Total Growth:</span>
+                            <span className={totalGrowth >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {totalGrowth.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Annual Growth:</span>
+                            <span className={annualGrowth >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {(annualGrowth * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="analysis">
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Key Metrics */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Key Financial Metrics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {(() => {
+                    const firstSnapshot = projectionSummary.snapshots[0]
+                    const lastSnapshot = projectionSummary.snapshots[projectionSummary.snapshots.length - 1]
+                    const totalYears = lastSnapshot.year - firstSnapshot.year
+                    const netWorthGrowth = firstSnapshot.netWorth > 0 ?
+                      ((lastSnapshot.netWorth - firstSnapshot.netWorth) / firstSnapshot.netWorth) * 100 : 0
+                    const avgCashFlow = timelineData.reduce((sum, item) => sum + item.cashFlow, 0) / timelineData.length
+                    const positiveYears = timelineData.filter(item => item.cashFlow > 0).length
+                    const cashFlowPositivity = (positiveYears / timelineData.length) * 100
+
+                    return (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="text-center p-3 border rounded">
+                            <div className="text-2xl font-bold text-blue-600">
+                              {formatCurrency(lastSnapshot.netWorth)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Final Net Worth</div>
+                          </div>
+                          <div className="text-center p-3 border rounded">
+                            <div className={`text-2xl font-bold ${netWorthGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {netWorthGrowth.toFixed(1)}%
+                            </div>
+                            <div className="text-sm text-muted-foreground">Total Growth</div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="text-center p-3 border rounded">
+                            <div className={`text-2xl font-bold ${avgCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(avgCashFlow)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Avg Cash Flow</div>
+                          </div>
+                          <div className="text-center p-3 border rounded">
+                            <div className={`text-2xl font-bold ${cashFlowPositivity >= 50 ? 'text-green-600' : 'text-red-600'}`}>
+                              {cashFlowPositivity.toFixed(0)}%
+                            </div>
+                            <div className="text-sm text-muted-foreground">Positive Years</div>
+                          </div>
+                        </div>
+                      </>
+                    )
+                  })()}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Milestones */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Financial Milestones</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {(() => {
+                    const milestones = []
+                    const targets = [100000, 250000, 500000, 1000000, 2000000]
+
+                    targets.forEach(target => {
+                      const milestone = timelineData.find(item => item.netWorth >= target)
+                      if (milestone) {
+                        milestones.push({
+                          target: formatCurrency(target),
+                          year: milestone.year,
+                          achieved: true
+                        })
+                      } else {
+                        milestones.push({
+                          target: formatCurrency(target),
+                          year: null,
+                          achieved: false
+                        })
+                      }
+                    })
+
+                    return milestones.map((milestone, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 border rounded">
+                        <span className="font-medium">{milestone.target} Net Worth</span>
+                        {milestone.achieved ? (
+                          <span className="text-green-600 font-medium">Year {milestone.year}</span>
+                        ) : (
+                          <span className="text-muted-foreground">Not reached</span>
+                        )}
+                      </div>
+                    ))
+                  })()}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
