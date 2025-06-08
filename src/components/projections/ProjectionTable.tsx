@@ -69,7 +69,7 @@ export function ProjectionTable({ projectionSummary, plan }: ProjectionTableProp
   }
 
   const exportCSV = () => {
-    const csvData = []
+    const csvData: string[][] = []
     
     // Headers
     csvData.push(['Category', 'Item', 'Value', 'Owners', 'Has Overrides', 'Has Warnings'])

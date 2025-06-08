@@ -38,7 +38,10 @@ export function ProjectionCharts({ projectionSummary, plan }: ProjectionChartsPr
     totalAssets: snapshot.totalAssets,
     totalIncome: snapshot.totalIncome,
     totalCommitments: Math.abs(snapshot.totalCommitments),
-    cashFlow: snapshot.cashFlow
+    cashFlow: snapshot.cashFlow,
+    // Add separate positive and negative cash flow for coloring
+    positiveCashFlow: snapshot.cashFlow >= 0 ? snapshot.cashFlow : 0,
+    negativeCashFlow: snapshot.cashFlow < 0 ? Math.abs(snapshot.cashFlow) : 0
   }))
 
   const selectedSnapshot = projectionSummary.snapshots.find(s => s.year === selectedYear)
@@ -164,13 +167,17 @@ export function ProjectionCharts({ projectionSummary, plan }: ProjectionChartsPr
                     <XAxis dataKey="year" tickFormatter={formatYear} />
                     <YAxis tickFormatter={formatCurrency} />
                     <Tooltip
-                      formatter={(value: number) => [formatCurrency(value), 'Cash Flow']}
+                      formatter={(value: number, name: string) => {
+                        if (name === 'positiveCashFlow' || name === 'negativeCashFlow') {
+                          const actualValue = name === 'negativeCashFlow' ? -value : value
+                          return [formatCurrency(actualValue), 'Cash Flow']
+                        }
+                        return [formatCurrency(value), name]
+                      }}
                       labelFormatter={(year) => `Year ${year}`}
                     />
-                    <Bar
-                      dataKey="cashFlow"
-                      fill={(dataPoint: any) => dataPoint.cashFlow >= 0 ? '#82ca9d' : '#ff7300'}
-                    />
+                    <Bar dataKey="positiveCashFlow" fill="#82ca9d" name="Positive Cash Flow" />
+                    <Bar dataKey="negativeCashFlow" fill="#ff7300" name="Negative Cash Flow" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -453,7 +460,11 @@ export function ProjectionCharts({ projectionSummary, plan }: ProjectionChartsPr
               <CardContent>
                 <div className="space-y-3">
                   {(() => {
-                    const milestones = []
+                    const milestones: Array<{
+                      target: string;
+                      year: number | null;
+                      achieved: boolean;
+                    }> = []
                     const targets = [100000, 250000, 500000, 1000000, 2000000]
 
                     targets.forEach(target => {
