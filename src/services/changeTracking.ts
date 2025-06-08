@@ -1,4 +1,4 @@
-import { ChangeLogEntry, ChangeTimelineState, RevertOptions } from '../types'
+import { ChangeLogEntry, ChangeTimelineState, RevertOptions, FinancialPlan } from '../types'
 import { generateId, deepClone } from '../utils/validation'
 import { loadPlan, savePlan } from './storage'
 
@@ -63,8 +63,8 @@ class ChangeTrackingService {
     options: {
       entityId?: string
       scenarioId?: string
-      beforeSnapshot?: any
-      afterSnapshot?: any
+      beforeSnapshot?: FinancialPlan
+      afterSnapshot?: FinancialPlan
     } = {}
   ): Promise<ChangeLogEntry> {
     if (!this.currentPlanId) {
@@ -168,7 +168,7 @@ class ChangeTrackingService {
       }
 
       // Find the plan state at target version
-      let planStateAtTarget: any = null
+      let planStateAtTarget: FinancialPlan | null = null
 
       // Look for the most recent plan snapshot at or before target version
       const relevantEntries = this.timeline.entries
@@ -176,7 +176,7 @@ class ChangeTrackingService {
         .sort((a, b) => b.version - a.version)
 
       if (relevantEntries.length > 0) {
-        planStateAtTarget = relevantEntries[0].afterSnapshot
+        planStateAtTarget = relevantEntries[0].afterSnapshot as FinancialPlan
       } else {
         throw new Error('Cannot find plan state for target version')
       }

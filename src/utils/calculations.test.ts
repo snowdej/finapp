@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calculateProjectionSummary, calculateNetWorthProgression, calculateCashFlowProgression } from './calculations'
+import { calculateProjections, calculateNetWorthProgression, calculateCashFlowProgression } from './calculations'
 import { FinancialPlan, AssetType, Sex } from '../types'
 import { getDefaultAssumptions } from './assumptions'
 
@@ -61,7 +61,7 @@ describe('Calculations Engine', () => {
   }
 
   it('calculates basic projection summary', () => {
-    const result = calculateProjectionSummary(mockPlan, 2024, 2026)
+    const result = calculateProjections(mockPlan, 2024, 2026)
 
     expect(result.snapshots).toHaveLength(3) // 2024, 2025, 2026
     expect(result.snapshots[0].year).toBe(2024)
@@ -72,7 +72,7 @@ describe('Calculations Engine', () => {
   })
 
   it('applies growth rates correctly', () => {
-    const result = calculateProjectionSummary(mockPlan, 2024, 2025)
+    const result = calculateProjections(mockPlan, 2024, 2025)
 
     // Asset should grow by 5%
     const year2025Assets = result.snapshots[1].totalAssets
@@ -98,7 +98,7 @@ describe('Calculations Engine', () => {
       ]
     }
 
-    const result = calculateProjectionSummary(planWithNegativeAsset, 2024, 2025)
+    const result = calculateProjections(planWithNegativeAsset, 2024, 2025)
 
     // Asset should not go negative
     expect(result.snapshots[0].totalAssets).toBeGreaterThanOrEqual(0)
@@ -141,7 +141,7 @@ describe('Calculations Engine', () => {
       ]
     }
 
-    const result = calculateProjectionSummary(planWithOverrides, 2024, 2026)
+    const result = calculateProjections(planWithOverrides, 2024, 2026)
 
     // 2025 should use override value
     expect(result.snapshots[1].totalAssets).toBe(75000)
@@ -169,7 +169,7 @@ describe('Calculations Engine', () => {
       ]
     }
 
-    const result = calculateProjectionSummary(planWithMultipleAssets, 2024, 2024)
+    const result = calculateProjections(planWithMultipleAssets, 2024, 2024)
 
     expect(result.categoryTotals['ISA'][2024]).toBe(50000)
     expect(result.categoryTotals['SIPP'][2024]).toBe(100000)
@@ -188,7 +188,7 @@ describe('Calculations Engine', () => {
       ]
     }
 
-    const result = calculateProjectionSummary(planWithEndDates, 2024, 2025)
+    const result = calculateProjections(planWithEndDates, 2024, 2025)
 
     expect(result.snapshots[0].totalIncome).toBe(60000) // 2024 has income
     expect(result.snapshots[1].totalIncome).toBe(0) // 2025 has no income
@@ -204,18 +204,20 @@ describe('Calculations Engine', () => {
           loans: [
             {
               id: 'loan-1',
+              assetId: 'asset-1',
               name: 'Mortgage',
               amount: 150000,
               interestRate: 3.5,
               termYears: 25,
-              startDate: '2024-01-01'
+              startDate: '2024-01-01',
+              createdAt: '2024-01-01T00:00:00.000Z'
             }
           ]
         }
       ]
     }
 
-    const result = calculateProjectionSummary(planWithLoan, 2024, 2024)
+    const result = calculateProjections(planWithLoan, 2024, 2024)
 
     // Net asset value should be reduced by loan
     expect(result.snapshots[0].totalAssets).toBeLessThan(200000)

@@ -4,6 +4,16 @@ export enum Sex {
   F = 'F'
 }
 
+export interface ValidationError {
+  field: string
+  message: string
+}
+
+export interface ValidationResult {
+  isValid: boolean
+  errors: ValidationError[]
+}
+
 export interface Person {
   id: string
   name: string
@@ -13,60 +23,51 @@ export interface Person {
   updatedAt?: string
 }
 
-// Asset types
-export enum AssetType {
-  ISA = 'ISA',
-  SIPP = 'SIPP',
-  Property = 'Property',
-  Savings = 'Savings',
-  Stocks = 'Stocks',
-  Bonds = 'Bonds',
-  CorporatePension = 'Corporate Pension',
-  StatePension = 'State Pension',
-  Other = 'Other'
-}
-
 export interface Loan {
   id: string
+  assetId: string
   name: string
   amount: number
   interestRate: number
   termYears: number
   startDate: string
   monthlyPayment?: number
-  remainingBalance?: number
   createdAt: string
   updatedAt?: string
+}
+
+export interface AssetOverride {
+  id: string
+  assetId: string
+  year: number
+  value: number
+  reason?: string
+  createdAt: string
 }
 
 export interface Asset {
   id: string
   name: string
-  type: AssetType
+  type: 'ISA' | 'SIPP' | 'Property' | 'Cash' | 'Investment' | 'Other'
   currentValue: number
   ownerIds: string[]
   loans?: Loan[]
+  overrides?: AssetOverride[]
   growthRate?: number
   inflationRate?: number
-  valueOverrides?: Record<number, number>
   createdAt: string
   updatedAt?: string
 }
-
-// Financial item types
-export type Frequency = 'weekly' | 'monthly' | 'quarterly' | 'annually'
-export type Destination = 'cash' | 'asset' | 'external'
-export type Source = 'cash' | 'asset' | 'external'
 
 export interface Income {
   id: string
   name: string
   amount: number
-  frequency: Frequency
+  frequency: 'weekly' | 'monthly' | 'quarterly' | 'annually'
   startYear: number
   endYear?: number
   ownerIds: string[]
-  destination: Destination
+  destination: 'cash' | 'asset' | 'external'
   destinationAssetId?: string
   growthRate?: number
   inflationRate?: number
@@ -78,11 +79,11 @@ export interface Commitment {
   id: string
   name: string
   amount: number
-  frequency: Frequency
+  frequency: 'weekly' | 'monthly' | 'quarterly' | 'annually'
   startYear: number
   endYear?: number
   ownerIds: string[]
-  source: Source
+  source: 'cash' | 'asset' | 'external'
   sourceAssetId?: string
   growthRate?: number
   inflationRate?: number
@@ -90,17 +91,15 @@ export interface Commitment {
   updatedAt?: string
 }
 
-// Event types
-export type EventType = 'income' | 'expense' | 'asset_transfer' | 'inheritance' | 'gift' | 'other'
-
 export interface Event {
   id: string
   name: string
   year: number
   amount: number
-  type: EventType
+  type: 'income' | 'expense' | 'transfer' | 'inheritance' | 'other'
   description?: string
   isRecurring?: boolean
+  recurringFrequency?: 'annually' | 'monthly' | 'quarterly'
   recurringEndYear?: number
   affectedPersonIds?: string[]
   linkedAssetId?: string
@@ -108,11 +107,10 @@ export interface Event {
   updatedAt?: string
 }
 
-// Assumptions and overrides
 export interface TaxRates {
-  income: number
-  capitalGains: number
-  inheritanceTax: number
+  income?: number
+  capitalGains?: number
+  inheritanceTax?: number
 }
 
 export interface PlanAssumptions {
@@ -122,26 +120,22 @@ export interface PlanAssumptions {
   retirementAge: number
   lifeExpectancy: number
   assetGrowthRates: Record<string, number>
-  taxRates: TaxRates
+  taxRates?: TaxRates
 }
-
-export type OverrideType = 'inflation' | 'growth' | 'interest' | 'tax'
 
 export interface AssumptionOverride {
   id: string
-  entityType: 'asset' | 'income' | 'commitment' | 'category'
+  entityType: 'person' | 'asset' | 'income' | 'commitment' | 'category'
   entityId?: string
-  category?: string
-  overrideType: OverrideType
+  categoryType?: string
+  overrideType: 'inflation' | 'growth' | 'interest' | 'tax'
   value: number
   startYear?: number
   endYear?: number
   description?: string
   createdAt: string
-  updatedAt?: string
 }
 
-// Scenario types
 export interface Scenario {
   id: string
   planId: string
@@ -154,17 +148,29 @@ export interface Scenario {
   updatedAt?: string
 }
 
-// Change tracking types
-export type ActionType = 'create' | 'update' | 'delete' | 'revert' | 'import'
-export type EntityType = 'person' | 'asset' | 'income' | 'commitment' | 'event' | 'scenario' | 'plan'
+export interface FinancialPlan {
+  id: string
+  name: string
+  people: Person[]
+  assets: Asset[]
+  income: Income[]
+  commitments: Commitment[]
+  events: Event[]
+  assumptions: PlanAssumptions
+  overrides: AssumptionOverride[]
+  scenarios: Scenario[]
+  activeScenarioId: string
+  createdAt: string
+  updatedAt?: string
+}
 
 export interface ChangeLogEntry {
   id: string
   planId: string
   scenarioId?: string
   timestamp: string
-  actionType: ActionType
-  entityType: EntityType
+  actionType: 'create' | 'update' | 'delete' | 'revert' | 'import'
+  entityType: 'person' | 'asset' | 'income' | 'commitment' | 'event' | 'scenario' | 'plan'
   entityId?: string
   summary: string
   details: string
@@ -180,39 +186,10 @@ export interface ChangeTimelineState {
 
 export interface RevertOptions {
   createBackup?: boolean
-  targetScenario?: string
+  skipValidation?: boolean
 }
 
-// Main plan interface
-export interface FinancialPlan {
-  id: string
-  name: string
-  people: Person[]
-  assets: Asset[]
-  income: Income[]
-  commitments: Commitment[]
-  events: Event[]
-  assumptions: PlanAssumptions
-  overrides: AssumptionOverride[]
-  scenarios: Scenario[]
-  activeScenarioId?: string
-  createdAt: string
-  updatedAt?: string
-}
-
-// Validation types
-export interface ValidationError {
-  field: string
-  message: string
-}
-
-export interface ValidationResult {
-  isValid: boolean
-  errors: ValidationError[]
-}
-
-// Projection and calculation types
-export interface YearlySnapshot {
+export interface ProjectionSnapshot {
   year: number
   netWorth: number
   totalAssets: number
@@ -224,7 +201,7 @@ export interface YearlySnapshot {
 }
 
 export interface ProjectionSummary {
-  snapshots: YearlySnapshot[]
+  snapshots: ProjectionSnapshot[]
   categoryTotals: Record<string, Record<number, number>>
   warnings: string[]
 }

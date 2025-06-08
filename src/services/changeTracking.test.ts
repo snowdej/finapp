@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { changeTracker, trackPersonChange, trackAssetChange } from './changeTracking'
+import { Sex } from '../types'
 
 // Mock localStorage
 const mockLocalStorage = {
@@ -37,7 +38,21 @@ describe('Change Tracking Service', () => {
       'Person details: John Doe',
       {
         entityId: 'person-1',
-        afterSnapshot: { id: 'person-1', name: 'John Doe' }
+        afterSnapshot: {
+          people: [{ id: 'person-1', name: 'John Doe', dateOfBirth: '1980-01-01', sex: 'M' as Sex, createdAt: new Date().toISOString() }],
+          assets: [],
+          income: [],
+          commitments: [],
+          scenarios: [],
+          assumptions: {
+            inflationRate: 0.02,
+            incomeGrowthRate: 0.03,
+            commitmentGrowthRate: 0.02,
+            retirementAge: 65,
+            lifeExpectancy: 85,
+            assetGrowthRates: {}
+          }
+        }
       }
     )
 
@@ -50,14 +65,12 @@ describe('Change Tracking Service', () => {
 
   it('tracks person changes with helper function', async () => {
     await changeTracker.initializePlan('test-plan-id')
-    
     const personData = {
       id: 'person-1',
       name: 'John Doe',
       dateOfBirth: '1980-01-01',
-      sex: 'M'
+      sex: 'M' as Sex
     }
-
     const entry = await trackPersonChange('create', personData)
 
     expect(entry.summary).toContain('Added person: John Doe')

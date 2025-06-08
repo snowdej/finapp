@@ -14,6 +14,13 @@ vi.mock('./hooks/useAutosave', () => ({
   useAutosave: vi.fn()
 }))
 
+// Mock the change tracking hook
+vi.mock('./hooks/useChangeTracking', () => ({
+  useChangeTracking: vi.fn().mockReturnValue({
+    trackChange: vi.fn()
+  })
+}))
+
 // Mock the ImportExportDialog component
 vi.mock('./components/ui/ImportExportDialog', () => ({
   ImportExportDialog: () => <div>Import/Export Dialog</div>

@@ -271,3 +271,70 @@ interface Assumptions {
 * Multi-currency
 * DB pensions
 * Advanced event triggers
+
+---
+
+## Testing Strategy
+
+### Unit Testing (Vitest + Testing Library)
+* Data models and validation functions
+* Utility functions (calculations, formatting, validation)  
+* Individual React components in isolation
+* Storage service operations
+* Projection engine calculations
+
+### Integration Testing (Vitest + Testing Library)
+* Component interactions and data flow
+* Storage persistence across app lifecycle
+* Scenario switching and data integrity
+* Import/export functionality
+* Change tracking and timeline operations
+
+### End-to-End Testing (Cypress)
+* Complete user journeys from start to finish
+* Cross-browser compatibility testing
+* Data persistence across page reloads
+* Error handling and recovery scenarios
+* Performance testing with large datasets
+
+### Accessibility Testing (Axe + Cypress)
+* WCAG 2.1 AA compliance verification
+* Keyboard navigation testing
+* Screen reader compatibility
+* Focus management and ARIA implementation
+* Color contrast and visual accessibility
+
+### Performance Testing
+* Large dataset handling (1000+ items)
+* Concurrent operation testing
+* Memory usage optimization
+* Load time benchmarking
+* Storage efficiency measurement
+
+### Browser Testing Matrix
+* Chrome (latest 2 versions)
+* Firefox (latest 2 versions)  
+* Safari (latest 2 versions)
+* Edge (latest version)
+* Mobile browsers (iOS Safari, Chrome Mobile)
+
+### Test Data Management
+* Synthetic test data generation
+* Edge case scenario testing
+* Data migration testing
+* Backup and recovery testing
+
+### Continuous Integration
+* Automated test execution on commits
+* Coverage reporting and thresholds
+* Performance regression detection
+* Accessibility compliance monitoring
+
+* Cypress/Playwright for major workflows:
+  - Creating complete financial plans
+  - Adding people, assets, income, commitments
+  - Running projections and viewing reports
+  - Scenario creation and switching
+  - Data import/export workflows
+  - Timeline reversion testing
+  - Accessibility compliance verification

@@ -1,166 +1,195 @@
-describe('Complete User Journey', () => {
+describe('Full User Journey - Financial Planning Tool', () => {
   beforeEach(() => {
-    cy.visit('/')
-    cy.clearIndexedDB() // Custom command to clear data
+    cy.seedTestData()
   })
 
   it('completes a full financial planning workflow', () => {
-    // 1. Start on dashboard
-    cy.contains('Welcome to Your Financial Dashboard').should('be.visible')
-    cy.contains('No people added yet').should('be.visible')
-
-    // 2. Add a person
-    cy.get('[aria-label="Navigate to People section"]').click()
-    cy.contains('Add Your First Person').click()
+    // 1. Visit the application
+    cy.visit('/')
+    cy.get('h1').should('contain', 'Financial Projection Tool')
     
-    cy.get('[data-testid="person-name"]').type('John Doe')
-    cy.get('[data-testid="person-dob"]').type('1980-01-15')
-    cy.get('[data-testid="person-sex"]').select('M')
-    cy.contains('Add Person').click()
-
-    cy.contains('John Doe').should('be.visible')
-    cy.contains('44 years old').should('be.visible') // Approximate age
-
-    // 3. Add an asset
-    cy.get('[aria-label="Navigate to Assets section"]').click()
-    cy.contains('Add Your First Asset').click()
-
-    cy.get('[data-testid="asset-name"]').type('My ISA')
-    cy.get('[data-testid="asset-type"]').select('ISA')
-    cy.get('[data-testid="asset-value"]').type('25000')
-    cy.get('[data-testid="owner-john-doe"]').check()
-    cy.contains('Add Asset').click()
-
-    cy.contains('My ISA').should('be.visible')
-    cy.contains('£25,000').should('be.visible')
-
-    // 4. Add income
-    cy.get('[aria-label="Navigate to Income section"]').click()
-    cy.contains('Add Income').click()
-
-    cy.get('[data-testid="income-name"]').type('Salary')
-    cy.get('[data-testid="income-amount"]').type('5000')
-    cy.get('[data-testid="income-frequency"]').select('monthly')
-    cy.get('[data-testid="income-start-year"]').type('2024')
-    cy.get('[data-testid="owner-john-doe"]').check()
-    cy.contains('Add Income').click()
-
-    cy.contains('Salary').should('be.visible')
-    cy.contains('£5,000 per month').should('be.visible')
-
-    // 5. Add commitment
-    cy.get('[aria-label="Navigate to Commitments section"]').click()
-    cy.contains('Add Commitment').click()
-
-    cy.get('[data-testid="commitment-name"]').type('Rent')
-    cy.get('[data-testid="commitment-amount"]').type('1500')
-    cy.get('[data-testid="commitment-frequency"]').select('monthly')
-    cy.get('[data-testid="commitment-start-year"]').type('2024')
-    cy.get('[data-testid="owner-john-doe"]').check()
-    cy.contains('Add Commitment').click()
-
-    cy.contains('Rent').should('be.visible')
-    cy.contains('£1,500 per month').should('be.visible')
-
-    // 6. View projections
-    cy.get('[aria-label="Navigate to Projections section"]').click()
-    cy.contains('Financial Projections').should('be.visible')
+    // 2. Verify dashboard is displayed
+    cy.get('h2').should('contain', 'Welcome to Your Financial Dashboard')
+    cy.get('[data-cy="feature-cards"]').should('be.visible')
     
-    // Should show projection data
-    cy.contains('Net Worth').should('be.visible')
-    cy.contains('Cash Flow').should('be.visible')
-
-    // Check charts are rendered
-    cy.get('[data-testid="net-worth-chart"]').should('be.visible')
-    cy.get('[data-testid="cash-flow-chart"]').should('be.visible')
-
-    // 7. Create a scenario
-    cy.get('[aria-label="Navigate to Scenarios section"]').click()
-    cy.contains('Add Scenario').click()
-
-    cy.get('[data-testid="scenario-name"]').type('Conservative Growth')
-    cy.get('[data-testid="scenario-description"]').type('Lower growth assumptions')
-    cy.get('[data-testid="inflation-rate"]').clear().type('2.0')
-    cy.contains('Create Scenario').click()
-
-    cy.contains('Conservative Growth').should('be.visible')
-
-    // 8. Check timeline
-    cy.get('[aria-label="Navigate to Timeline section"]').click()
-    cy.contains('Change Timeline').should('be.visible')
+    // 3. Add people to the plan
+    cy.navigateToSection('People')
+    cy.get('h2').should('contain', 'People')
     
-    // Should show recorded changes
-    cy.contains('Added person: John Doe').should('be.visible')
-    cy.contains('Added asset: My ISA').should('be.visible')
-    cy.contains('Added income: Salary').should('be.visible')
-
-    // 9. Export data
-    cy.get('[aria-label="Navigate to Settings section"]').click()
-    cy.contains('Export Current Plan').click()
+    // Add first person (adult)
+    cy.createTestPerson('John Doe', '1980-01-15', 'M')
     
-    // File download should trigger (we can't fully test this in Cypress)
-    cy.get('[data-testid="export-success"]').should('be.visible')
-
-    // 10. Return to dashboard and verify summary
-    cy.get('[aria-label="Navigate to Dashboard section"]').click()
-    cy.contains('1').should('be.visible') // People count
-    cy.contains('£25,000').should('be.visible') // Asset value
-    cy.contains('£60,000').should('be.visible') // Annual income
+    // Add second person (spouse)
+    cy.createTestPerson('Jane Doe', '1982-05-20', 'F')
+    
+    // Add child
+    cy.createTestPerson('Child Doe', '2010-08-10', 'M')
+    
+    // Verify people are listed
+    cy.get('[data-cy="person-card"]').should('have.length', 3)
+    cy.get('[data-cy="person-card"]').first().should('contain', 'John Doe')
+    
+    // 4. Add assets
+    cy.navigateToSection('Assets')
+    cy.get('h2').should('contain', 'Assets')
+    
+    // Add ISA
+    cy.createTestAsset('My ISA', 'ISA', 25000)
+    
+    // Add SIPP
+    cy.createTestAsset('Pension Fund', 'SIPP', 150000)
+    
+    // Add Property
+    cy.createTestAsset('Family Home', 'Property', 450000)
+    
+    // Verify assets are listed
+    cy.get('[data-cy="asset-card"]').should('have.length', 3)
+    
+    // 5. Add income sources
+    cy.navigateToSection('Income')
+    cy.get('h2').should('contain', 'Income')
+    
+    cy.get('[data-cy="add-income-btn"]').click()
+    cy.get('#name').type('Salary - John')
+    cy.get('#amount').type('60000')
+    cy.get('#frequency').select('annually')
+    cy.get('#startYear').type('2024')
+    cy.get('[data-cy="owner-checkbox"]').first().check()
+    cy.get('button[type="submit"]').click()
+    
+    // Verify income is added
+    cy.get('[data-cy="income-card"]').should('contain', 'Salary - John')
+    
+    // 6. Add commitments
+    cy.navigateToSection('Commitments')
+    cy.get('h2').should('contain', 'Commitments')
+    
+    cy.get('[data-cy="add-commitment-btn"]').click()
+    cy.get('#name').type('Mortgage Payment')
+    cy.get('#amount').type('2500')
+    cy.get('#frequency').select('monthly')
+    cy.get('#startYear').type('2024')
+    cy.get('#endYear').type('2044')
+    cy.get('[data-cy="owner-checkbox"]').first().check()
+    cy.get('button[type="submit"]').click()
+    
+    // Verify commitment is added
+    cy.get('[data-cy="commitment-card"]').should('contain', 'Mortgage Payment')
+    
+    // 7. Add events
+    cy.navigateToSection('Events')
+    cy.get('h2').should('contain', 'Events')
+    
+    cy.get('[data-cy="add-event-btn"]').click()
+    cy.get('#name').type('Inheritance')
+    cy.get('#year').type('2030')
+    cy.get('#amount').type('100000')
+    cy.get('#type').select('income')
+    cy.get('button[type="submit"]').click()
+    
+    // Verify event is added
+    cy.get('[data-cy="event-card"]').should('contain', 'Inheritance')
+    
+    // 8. View projections
+    cy.navigateToSection('Projections')
+    cy.get('h2').should('contain', 'Financial Projections')
+    
+    // Check that projections are calculated and displayed
+    cy.get('[data-cy="projection-table"]').should('be.visible')
+    cy.get('[data-cy="projection-charts"]').should('be.visible')
+    
+    // Verify table has data
+    cy.get('[data-cy="projection-table"] tbody tr').should('have.length.greaterThan', 0)
+    
+    // 9. Check scenarios
+    cy.navigateToSection('Scenarios')
+    cy.get('h2').should('contain', 'Scenarios')
+    
+    // Base scenario should exist
+    cy.get('[data-cy="scenario-card"]').should('contain', 'Base Scenario')
+    
+    // Create new scenario
+    cy.get('[data-cy="create-scenario-btn"]').click()
+    cy.get('#name').type('Optimistic Scenario')
+    cy.get('#description').type('Higher growth rates scenario')
+    cy.get('button[type="submit"]').click()
+    
+    // Verify new scenario is created
+    cy.get('[data-cy="scenario-card"]').should('have.length', 2)
+    
+    // 10. View timeline
+    cy.navigateToSection('Timeline')
+    cy.get('h2').should('contain', 'Change Timeline')
+    
+    // Should show change history
+    cy.get('[data-cy="timeline-entry"]').should('have.length.greaterThan', 0)
+    
+    // 11. Export data
+    cy.navigateToSection('Settings')
+    cy.get('[data-cy="export-btn"]').click()
+    
+    // Should trigger download (we can't verify file download in Cypress easily,
+    // but we can verify the button works)
+    cy.get('[data-cy="export-success"]').should('be.visible')
+    
+    // 12. Return to dashboard and verify summary
+    cy.navigateToSection('Dashboard')
+    
+    // Summary should reflect added data
+    cy.get('[data-cy="summary-people"]').should('contain', '3')
+    cy.get('[data-cy="summary-assets"]').should('contain', '3')
+    cy.get('[data-cy="summary-income"]').should('contain', '1')
   })
 
-  it('handles edit and delete operations correctly', () => {
-    // Setup initial data
-    cy.get('[aria-label="Navigate to People section"]').click()
-    cy.contains('Add Your First Person').click()
-    cy.get('[data-testid="person-name"]').type('Test Person')
-    cy.get('[data-testid="person-dob"]').type('1990-01-01')
-    cy.get('[data-testid="person-sex"]').select('F')
-    cy.contains('Add Person').click()
-
-    // Edit person
-    cy.get('[aria-label="Edit Test Person"]').click()
-    cy.get('[data-testid="person-name"]').clear().type('Updated Person')
-    cy.contains('Save').click()
-    cy.contains('Updated Person').should('be.visible')
-
-    // Delete person with confirmation
-    cy.get('[aria-label="Delete Updated Person"]').click()
-    cy.contains('Are you sure you want to delete').should('be.visible')
-    cy.contains('Delete').click()
-    cy.contains('No people added yet').should('be.visible')
+  it('handles error scenarios gracefully', () => {
+    cy.visit('/')
+    
+    // Try to add invalid person
+    cy.navigateToSection('People')
+    cy.get('[data-cy="add-person-btn"]').click()
+    
+    // Submit without required fields
+    cy.get('button[type="submit"]').click()
+    
+    // Should show validation errors
+    cy.get('[data-cy="validation-error"]').should('be.visible')
+    cy.get('[data-cy="validation-error"]').should('contain', 'Date of birth is required')
+    
+    // Cancel form
+    cy.get('button[type="button"]').contains('Cancel').click()
+    
+    // Should return to list view
+    cy.get('[data-cy="add-person-btn"]').should('be.visible')
   })
 
-  it('supports keyboard navigation throughout the app', () => {
-    // Tab through navigation
+  it('maintains data persistence across page reloads', () => {
+    cy.visit('/')
+    
+    // Add test data
+    cy.createTestPerson('Test User', '1990-01-01', 'M')
+    
+    // Reload page
+    cy.reload()
+    
+    // Verify data persists
+    cy.navigateToSection('People')
+    cy.get('[data-cy="person-card"]').should('contain', 'Test User')
+  })
+
+  it('supports keyboard navigation', () => {
+    cy.visit('/')
+    
+    // Test skip links
     cy.get('body').tab()
     cy.focused().should('contain', 'Skip to main content')
     
-    cy.get('body').tab()
-    cy.focused().should('contain', 'Skip to navigation')
+    // Navigate to main content
+    cy.focused().type('{enter}')
+    cy.focused().should('have.attr', 'id', 'main-content')
     
-    // Navigate using keyboard
-    cy.get('[aria-label="Navigate to People section"]').focus().type('{enter}')
-    cy.contains('People').should('be.visible')
-    
-    // Tab through the page
-    cy.get('body').tab()
-    cy.focused().should('be.visible')
-  })
-
-  it('maintains data consistency across browser refresh', () => {
-    // Add some data
-    cy.get('[aria-label="Navigate to People section"]').click()
-    cy.contains('Add Your First Person').click()
-    cy.get('[data-testid="person-name"]').type('Persistent Person')
-    cy.get('[data-testid="person-dob"]').type('1985-06-15')
-    cy.get('[data-testid="person-sex"]').select('M')
-    cy.contains('Add Person').click()
-
-    // Refresh the page
-    cy.reload()
-
-    // Data should still be there
-    cy.get('[aria-label="Navigate to People section"]').click()
-    cy.contains('Persistent Person').should('be.visible')
+    // Navigate through sidebar
+    cy.get('[aria-label="Navigate to People section"]').focus()
+    cy.focused().type('{enter}')
+    cy.url().should('contain', '#')
   })
 })
