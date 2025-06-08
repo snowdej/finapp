@@ -88,13 +88,13 @@
 * Record all major interactions
 * View history, hard-revert to any point
 
-### 14. Accessibility & Polish - [ ]
+### 14. Accessibility & Polish - [x]
 
 * Ensure best practice accessibility (labels, keyboard navigation, contrast, ARIA roles)
 * Responsive design
 * Finalise British English/£ UI
 
-### 15. Testing - [ ]
+### 15. Testing - [x]
 
 * Write unit and integration tests (Jest/Vitest + Cypress/Playwright)
 * Manual testing for cross-browser, edge cases, large datasets
@@ -233,7 +233,7 @@ Show timeline in UI and allow user to hard-revert to any previous state. Test ti
 
 ---
 
-### \[Step 14] — **Accessibility, UI Polish & Integration** - [ ]
+### \[Step 14] — **Accessibility, UI Polish & Integration** - [x]
 
 ```text
 Review all forms, tables, and components for keyboard navigation, labels, contrast, and ARIA roles. Finalise responsive layout and British English/£ UI. Remove orphaned code, integrate and test all flows.
@@ -241,7 +241,7 @@ Review all forms, tables, and components for keyboard navigation, labels, contra
 
 ---
 
-### \[Step 15] — **Testing: Final Pass** - [ ]
+### \[Step 15] — **Testing: Final Pass** - [x]
 
 ```text
 Expand on unit and integration tests to cover:

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Scenario, PlanAssumptions, AssumptionOverride, ValidationError } from '../../types'
+import { Scenario, PlanAssumptions, AssumptionOverride, ValidationError, AssetType } from '../../types'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
@@ -54,7 +54,7 @@ export function ScenarioForm({
     }))
   }
 
-  const handleAssetGrowthChange = (assetType: string, value: number) => {
+  const handleAssetGrowthChange = (assetType: AssetType, value: number) => {
     setFormData(prev => ({
       ...prev,
       assumptions: {
@@ -156,7 +156,7 @@ export function ScenarioForm({
               type="number"
               step="0.1"
               value={formData.assumptions?.assetGrowthRates?.ISA || ''}
-              onChange={(e) => handleAssetGrowthChange('ISA', parseFloat(e.target.value) || 0)}
+              onChange={(e) => handleAssetGrowthChange(AssetType.ISA, parseFloat(e.target.value) || 0)}
             />
           </div>
 
@@ -167,7 +167,7 @@ export function ScenarioForm({
               type="number"
               step="0.1"
               value={formData.assumptions?.assetGrowthRates?.SIPP || ''}
-              onChange={(e) => handleAssetGrowthChange('SIPP', parseFloat(e.target.value) || 0)}
+              onChange={(e) => handleAssetGrowthChange(AssetType.SIPP, parseFloat(e.target.value) || 0)}
             />
           </div>
         </div>

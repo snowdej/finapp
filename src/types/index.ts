@@ -1,4 +1,4 @@
-// Basic person types
+// Core person types
 export enum Sex {
   M = 'M',
   F = 'F'
@@ -9,22 +9,21 @@ export interface Person {
   name: string
   dateOfBirth: string
   sex: Sex
-  createdAt?: string
+  createdAt: string
   updatedAt?: string
 }
 
-// Asset and loan types
-export interface Asset {
-  id: string
-  name: string
-  type: 'ISA' | 'SIPP' | 'Property' | 'Cash' | 'Premium Bonds' | 'Investment' | 'Crypto' | 'Other'
-  currentValue: number
-  ownerIds: string[]
-  loans?: Loan[]
-  growthRate?: number
-  inflationRate?: number
-  createdAt?: string
-  updatedAt?: string
+// Asset types
+export enum AssetType {
+  ISA = 'ISA',
+  SIPP = 'SIPP',
+  Property = 'Property',
+  Savings = 'Savings',
+  Stocks = 'Stocks',
+  Bonds = 'Bonds',
+  CorporatePension = 'Corporate Pension',
+  StatePension = 'State Pension',
+  Other = 'Other'
 }
 
 export interface Loan {
@@ -34,27 +33,44 @@ export interface Loan {
   interestRate: number
   termYears: number
   startDate: string
-  assetId?: string
   monthlyPayment?: number
   remainingBalance?: number
-  createdAt?: string
+  createdAt: string
   updatedAt?: string
 }
 
-// Income and commitment types
+export interface Asset {
+  id: string
+  name: string
+  type: AssetType
+  currentValue: number
+  ownerIds: string[]
+  loans?: Loan[]
+  growthRate?: number
+  inflationRate?: number
+  valueOverrides?: Record<number, number>
+  createdAt: string
+  updatedAt?: string
+}
+
+// Financial item types
+export type Frequency = 'weekly' | 'monthly' | 'quarterly' | 'annually'
+export type Destination = 'cash' | 'asset' | 'external'
+export type Source = 'cash' | 'asset' | 'external'
+
 export interface Income {
   id: string
   name: string
   amount: number
-  frequency: 'weekly' | 'monthly' | 'quarterly' | 'annually'
+  frequency: Frequency
   startYear: number
   endYear?: number
   ownerIds: string[]
-  destination: 'cash' | 'asset' | 'external'
+  destination: Destination
   destinationAssetId?: string
   growthRate?: number
   inflationRate?: number
-  createdAt?: string
+  createdAt: string
   updatedAt?: string
 }
 
@@ -62,94 +78,67 @@ export interface Commitment {
   id: string
   name: string
   amount: number
-  frequency: 'weekly' | 'monthly' | 'quarterly' | 'annually'
+  frequency: Frequency
   startYear: number
   endYear?: number
   ownerIds: string[]
-  source: 'cash' | 'asset' | 'external'
+  source: Source
   sourceAssetId?: string
   growthRate?: number
   inflationRate?: number
-  createdAt?: string
+  createdAt: string
   updatedAt?: string
 }
 
 // Event types
+export type EventType = 'income' | 'expense' | 'asset_transfer' | 'inheritance' | 'gift' | 'other'
+
 export interface Event {
   id: string
   name: string
   year: number
   amount: number
-  type: 'income' | 'expense' | 'asset_change' | 'withdrawal' | 'deposit' | 'inheritance' | 'other'
+  type: EventType
   description?: string
-  affectedPersonIds?: string[]
-  linkedAssetId?: string
   isRecurring?: boolean
   recurringEndYear?: number
-  createdAt?: string
+  affectedPersonIds?: string[]
+  linkedAssetId?: string
+  createdAt: string
   updatedAt?: string
 }
 
-// Assumptions and overrides types
+// Assumptions and overrides
+export interface TaxRates {
+  income: number
+  capitalGains: number
+  inheritanceTax: number
+}
+
 export interface PlanAssumptions {
-  id?: string
-  planId?: string
   inflationRate: number
   incomeGrowthRate: number
-  assetGrowthRates: Record<string, number>
   commitmentGrowthRate: number
-  interestRates: Record<string, number>
   retirementAge: number
   lifeExpectancy: number
-  taxRates: {
-    income: number
-    capitalGains: number
-    inheritanceTax: number
-  }
-  createdAt?: string
-  updatedAt?: string
+  assetGrowthRates: Record<string, number>
+  taxRates: TaxRates
 }
+
+export type OverrideType = 'inflation' | 'growth' | 'interest' | 'tax'
 
 export interface AssumptionOverride {
   id: string
   entityType: 'asset' | 'income' | 'commitment' | 'category'
   entityId?: string
   category?: string
-  overrideType: 'inflation' | 'growth' | 'interest' | 'tax'
+  overrideType: OverrideType
   value: number
   startYear?: number
   endYear?: number
   description?: string
-  createdAt?: string
+  createdAt: string
   updatedAt?: string
-}
-
-// Change log types for git-like history
-export interface ChangeLogEntry {
-  id: string
-  planId: string
-  scenarioId?: string
-  timestamp: string
-  actionType: 'create' | 'update' | 'delete' | 'import' | 'revert'
-  entityType: 'person' | 'asset' | 'income' | 'commitment' | 'event' | 'scenario' | 'assumptions' | 'plan'
-  entityId?: string
-  summary: string
-  details: string
-  beforeSnapshot?: any
-  afterSnapshot?: any
-  userId?: string
-  version: number
-}
-
-export interface ChangeTimelineState {
-  currentVersion: number
-  entries: ChangeLogEntry[]
-  lastSnapshot?: any
-}
-
-export interface RevertOptions {
-  preserveSubsequentChanges?: boolean
-  createBackup?: boolean
 }
 
 // Scenario types
@@ -165,7 +154,36 @@ export interface Scenario {
   updatedAt?: string
 }
 
-// Enhanced types with scenario integration
+// Change tracking types
+export type ActionType = 'create' | 'update' | 'delete' | 'revert' | 'import'
+export type EntityType = 'person' | 'asset' | 'income' | 'commitment' | 'event' | 'scenario' | 'plan'
+
+export interface ChangeLogEntry {
+  id: string
+  planId: string
+  scenarioId?: string
+  timestamp: string
+  actionType: ActionType
+  entityType: EntityType
+  entityId?: string
+  summary: string
+  details: string
+  beforeSnapshot?: any
+  afterSnapshot?: any
+  version: number
+}
+
+export interface ChangeTimelineState {
+  currentVersion: number
+  entries: ChangeLogEntry[]
+}
+
+export interface RevertOptions {
+  createBackup?: boolean
+  targetScenario?: string
+}
+
+// Main plan interface
 export interface FinancialPlan {
   id: string
   name: string
@@ -193,16 +211,26 @@ export interface ValidationResult {
   errors: ValidationError[]
 }
 
-// Change log types
-export interface ChangeLog {
-  id: string
-  planId: string
-  scenarioId?: string
-  timestamp: string
-  action: string
-  description: string
-  data: any
+// Projection and calculation types
+export interface YearlySnapshot {
+  year: number
+  netWorth: number
+  totalAssets: number
+  totalIncome: number
+  totalCommitments: number
+  cashFlow: number
+  assetsByCategory: Record<string, number>
+  warnings: string[]
 }
 
-type TabId = 'dashboard' | 'people' | 'assets' | 'income' | 'commitments' | 'events' | 'scenarios' | 'projections' | 'settings'
+export interface ProjectionSummary {
+  snapshots: YearlySnapshot[]
+  categoryTotals: Record<string, Record<number, number>>
+  warnings: string[]
+}
+
+// Utility function exports
+export { calculateAge } from '../utils/validation'
+export { generateId } from '../utils/validation'
+export { deepClone } from '../utils/validation'
 
