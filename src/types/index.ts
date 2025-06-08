@@ -138,7 +138,20 @@ export interface ChangeLogEntry {
   newState?: any
 }
 
-// Enhanced types with assumption integration
+// Scenario types
+export interface Scenario {
+  id: string
+  planId: string
+  name: string
+  description?: string
+  isBase: boolean
+  assumptions: PlanAssumptions
+  overrides: AssumptionOverride[]
+  createdAt: string
+  updatedAt?: string
+}
+
+// Enhanced types with scenario integration
 export interface FinancialPlan {
   id: string
   name: string
@@ -149,6 +162,8 @@ export interface FinancialPlan {
   events: Event[]
   assumptions: PlanAssumptions
   overrides: AssumptionOverride[]
+  scenarios: Scenario[]
+  activeScenarioId?: string
   createdAt: string
   updatedAt?: string
 }
@@ -162,17 +177,6 @@ export interface ValidationError {
 export interface ValidationResult {
   isValid: boolean
   errors: ValidationError[]
-}
-
-// Scenario types
-export interface Scenario {
-  id: string
-  name: string
-  planId: string
-  isBase: boolean
-  assumptions: PlanAssumptions
-  createdAt: string
-  updatedAt?: string
 }
 
 // Change log types

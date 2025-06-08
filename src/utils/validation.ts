@@ -478,3 +478,48 @@ export function validateAssumptionOverride(override: Partial<AssumptionOverride>
     errors
   }
 }
+
+export function validateScenario(scenario: Partial<Scenario>): ValidationResult {
+  const errors: ValidationError[] = []
+
+  // Name validation (required)
+  if (!scenario.name || !scenario.name.trim()) {
+    errors.push({ field: 'name', message: 'Scenario name is required' })
+  }
+
+  // Plan ID validation (required)
+  if (!scenario.planId || !scenario.planId.trim()) {
+    errors.push({ field: 'planId', message: 'Plan ID is required' })
+  }
+
+  // Assumptions validation (required)
+  if (!scenario.assumptions) {
+    errors.push({ field: 'assumptions', message: 'Scenario assumptions are required' })
+  } else {
+    const assumptionValidation = validatePlanAssumptions(scenario.assumptions)
+    if (!assumptionValidation.isValid) {
+      errors.push(...assumptionValidation.errors.map(error => ({
+        field: `assumptions.${error.field}`,
+        message: error.message
+      })))
+    }
+  }
+
+  // Overrides validation (optional, but if provided should be valid)
+  if (scenario.overrides && scenario.overrides.length > 0) {
+    scenario.overrides.forEach((override, index) => {
+      const overrideValidation = validateAssumptionOverride(override)
+      if (!overrideValidation.isValid) {
+        errors.push(...overrideValidation.errors.map(error => ({
+          field: `overrides[${index}].${error.field}`,
+          message: error.message
+        })))
+      }
+    })
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}

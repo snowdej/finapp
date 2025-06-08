@@ -24,7 +24,8 @@ import { CommitmentManager } from './components/commitments/CommitmentManager'
 import { EventManager } from './components/events/EventManager'
 import { AssumptionsManager } from './components/assumptions/AssumptionsManager'
 import { getDefaultAssumptions } from './utils/assumptions'
-import { Person, Asset, Income, Commitment, Event, PlanAssumptions, AssumptionOverride } from './types'
+import { Person, Asset, Income, Commitment, Event, PlanAssumptions, AssumptionOverride, Scenario } from './types'
+import { ScenarioManager } from './components/scenarios/ScenarioManager'
 
 type TabId = 'dashboard' | 'people' | 'assets' | 'income' | 'commitments' | 'events' | 'scenarios' | 'settings'
 
@@ -75,6 +76,22 @@ function App() {
     }
   }
 
+  const handleUpdateScenarios = (scenarios: Scenario[]) => {
+    if (currentPlan) {
+      const updatedPlan = { ...currentPlan, scenarios }
+      setCurrentPlan(updatedPlan)
+      // Auto-save will be triggered by useAutosave hook
+    }
+  }
+
+  const handleSetActiveScenario = (scenarioId: string) => {
+    if (currentPlan) {
+      const updatedPlan = { ...currentPlan, activeScenarioId: scenarioId }
+      setCurrentPlan(updatedPlan)
+      // Auto-save will be triggered by useAutosave hook
+    }
+  }
+
   // Load or create initial plan
   useEffect(() => {
     const initializePlan = async () => {
@@ -89,7 +106,19 @@ function App() {
           setCurrentPlan(latestPlan)
           setPlanId(latestPlan.id)
         } else {
-          // Create a default plan
+          // Create a default plan with base scenario
+          const defaultAssumptions = getDefaultAssumptions()
+          const baseScenario: Scenario = {
+            id: generateId('scenario'),
+            planId: `plan-${Date.now()}`,
+            name: 'Base Scenario',
+            description: 'Default baseline scenario',
+            isBase: true,
+            assumptions: defaultAssumptions,
+            overrides: [],
+            createdAt: new Date().toISOString()
+          }
+
           const defaultPlan = {
             id: `plan-${Date.now()}`,
             name: 'My Financial Plan',
@@ -98,10 +127,13 @@ function App() {
             income: [],
             commitments: [],
             events: [],
-            assumptions: getDefaultAssumptions(),
+            assumptions: defaultAssumptions,
             overrides: [],
+            scenarios: [baseScenario],
+            activeScenarioId: baseScenario.id,
             createdAt: new Date().toISOString()
           }
+          
           await savePlan(defaultPlan)
           setCurrentPlan(defaultPlan)
           setPlanId(defaultPlan.id)
@@ -350,15 +382,18 @@ function App() {
         )
       case 'scenarios':
         return (
-          <AssumptionsManager
-            assumptions={currentPlan?.assumptions || getDefaultAssumptions()}
-            overrides={currentPlan?.overrides || []}
+          <ScenarioManager
+            planId={currentPlan?.id || ''}
+            scenarios={currentPlan?.scenarios || []}
+            activeScenarioId={currentPlan?.activeScenarioId}
+            currentAssumptions={currentPlan?.assumptions || getDefaultAssumptions()}
+            currentOverrides={currentPlan?.overrides || []}
             people={currentPlan?.people || []}
             assets={currentPlan?.assets || []}
             income={currentPlan?.income || []}
             commitments={currentPlan?.commitments || []}
-            onUpdateAssumptions={handleUpdateAssumptions}
-            onUpdateOverrides={handleUpdateOverrides}
+            onUpdateScenarios={handleUpdateScenarios}
+            onSetActiveScenario={handleSetActiveScenario}
           />
         )
       case 'settings':
