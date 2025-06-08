@@ -19,6 +19,9 @@ import {
   AlertTriangle,
   CheckCircle
 } from 'lucide-react'
+import { FocusTrap } from '../ui/focus-trap'
+import { useAnnouncer } from '../../hooks/useAnnouncer'
+import { generateAriaLabel } from '../../utils/accessibility'
 
 interface TimelineViewerProps {
   planId: string
@@ -34,6 +37,7 @@ export function TimelineViewer({ planId, onRevert }: TimelineViewerProps) {
   const [selectedEntry, setSelectedEntry] = useState<ChangeLogEntry | null>(null)
   const [showRevertConfirm, setShowRevertConfirm] = useState<number | null>(null)
   const [stats, setStats] = useState<any>(null)
+  const { announce } = useAnnouncer()
 
   useEffect(() => {
     loadTimeline()
@@ -86,12 +90,16 @@ export function TimelineViewer({ planId, onRevert }: TimelineViewerProps) {
         await loadTimeline()
         setShowRevertConfirm(null)
         onRevert?.(version)
+        announce(`Successfully reverted to version ${version}`)
       } else {
+        announce('Failed to revert. Please try again.', 'assertive')
         alert('Failed to revert. Please try again.')
       }
     } catch (error) {
       console.error('Revert error:', error)
-      alert('Failed to revert: ' + (error as Error).message)
+      const message = 'Failed to revert: ' + (error as Error).message
+      announce(message, 'assertive')
+      alert(message)
     }
   }
 
@@ -104,6 +112,7 @@ export function TimelineViewer({ planId, onRevert }: TimelineViewerProps) {
     link.download = `timeline-${planId}-${new Date().toISOString().split('T')[0]}.json`
     link.click()
     URL.revokeObjectURL(url)
+    announce('Timeline exported successfully')
   }
 
   const importTimeline = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,13 +125,17 @@ export function TimelineViewer({ planId, onRevert }: TimelineViewerProps) {
       
       if (success) {
         await loadTimeline()
+        announce('Timeline imported successfully')
         alert('Timeline imported successfully')
       } else {
+        announce('Failed to import timeline', 'assertive')
         alert('Failed to import timeline')
       }
     } catch (error) {
       console.error('Import error:', error)
-      alert('Failed to import timeline: ' + (error as Error).message)
+      const message = 'Failed to import timeline: ' + (error as Error).message
+      announce(message, 'assertive')
+      alert(message)
     }
     
     // Reset input
@@ -167,7 +180,7 @@ export function TimelineViewer({ planId, onRevert }: TimelineViewerProps) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <History className="h-8 w-8" />
+            <History className="h-8 w-8" aria-hidden="true" />
             Change Timeline
           </h2>
           <p className="text-muted-foreground mt-2">
@@ -175,12 +188,20 @@ export function TimelineViewer({ planId, onRevert }: TimelineViewerProps) {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={exportTimeline}>
-            <Download className="h-4 w-4 mr-2" />
+          <Button 
+            variant="outline" 
+            onClick={exportTimeline}
+            aria-label="Export timeline data as JSON file"
+          >
+            <Download className="h-4 w-4 mr-2" aria-hidden="true" />
             Export
           </Button>
-          <Button variant="outline" onClick={() => document.getElementById('timeline-import')?.click()}>
-            <Upload className="h-4 w-4 mr-2" />
+          <Button 
+            variant="outline" 
+            onClick={() => document.getElementById('timeline-import')?.click()}
+            aria-label="Import timeline data from JSON file"
+          >
+            <Upload className="h-4 w-4 mr-2" aria-hidden="true" />
             Import
           </Button>
           <input
@@ -196,36 +217,40 @@ export function TimelineViewer({ planId, onRevert }: TimelineViewerProps) {
 
       {/* Statistics */}
       {stats && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{stats.totalChanges}</div>
-              <div className="text-sm text-muted-foreground">Total Changes</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{changeTracker.getCurrentVersion()}</div>
-              <div className="text-sm text-muted-foreground">Current Version</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">
-                {Object.keys(stats.changesByEntity).length}
-              </div>
-              <div className="text-sm text-muted-foreground">Entity Types</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">
-                {stats.newestChange ? formatTimestamp(stats.newestChange).split(' ')[0] : 'N/A'}
-              </div>
-              <div className="text-sm text-muted-foreground">Last Change</div>
-            </CardContent>
-          </Card>
-        </div>
+        <section aria-labelledby="timeline-stats-heading">
+          <h3 id="timeline-stats-heading" className="sr-only">Timeline Statistics</h3>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[{
+              label: 'Total Changes',
+              value: stats.totalChanges
+            },
+            {
+              label: 'Current Version',
+              value: changeTracker.getCurrentVersion()
+            },
+            {
+              label: 'Entity Types',
+              value: Object.keys(stats.changesByEntity).length
+            },
+            {
+              label: 'Last Change',
+              value: stats.newestChange ? formatTimestamp(stats.newestChange).split(' ')[0] : 'N/A'
+            }
+            ].map((stat, index) => (
+              <Card key={index} asSection>
+                <CardContent className="p-4">
+                  <div 
+                    className="text-2xl font-bold"
+                    aria-label={generateAriaLabel(stat.label, stat.value)}
+                  >
+                    {stat.value}
+                  </div>
+                  <div className="text-sm text-muted-foreground">{stat.label}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Filters */}
@@ -292,20 +317,22 @@ export function TimelineViewer({ planId, onRevert }: TimelineViewerProps) {
       </Card>
 
       {/* Timeline */}
-      <Card>
+      <Card asSection aria-labelledby="timeline-history-heading">
         <CardHeader>
-          <CardTitle>Change History ({filteredEntries.length} entries)</CardTitle>
+          <CardTitle as="h3" id="timeline-history-heading">
+            Change History ({filteredEntries.length} entries)
+          </CardTitle>
           <CardDescription>
             Click on any entry to view details or revert to that state
           </CardDescription>
         </CardHeader>
         <CardContent>
           {filteredEntries.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground" role="status">
               {entries.length === 0 ? 'No changes recorded yet' : 'No changes match your filters'}
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4" role="log" aria-label="Timeline entries">
               {filteredEntries.map((entry, index) => (
                 <div
                   key={entry.id}
@@ -313,6 +340,16 @@ export function TimelineViewer({ planId, onRevert }: TimelineViewerProps) {
                     selectedEntry?.id === entry.id ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
                   }`}
                   onClick={() => setSelectedEntry(selectedEntry?.id === entry.id ? null : entry)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setSelectedEntry(selectedEntry?.id === entry.id ? null : entry)
+                    }
+                  }}
+                  aria-expanded={selectedEntry?.id === entry.id}
+                  aria-label={`Timeline entry: ${entry.summary}. ${selectedEntry?.id === entry.id ? 'Expanded' : 'Collapsed'}. Press Enter to ${selectedEntry?.id === entry.id ? 'collapse' : 'expand'}.`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
@@ -341,8 +378,9 @@ export function TimelineViewer({ planId, onRevert }: TimelineViewerProps) {
                             e.stopPropagation()
                             setShowRevertConfirm(entry.version)
                           }}
+                          aria-label={`Revert to version ${entry.version}: ${entry.summary}`}
                         >
-                          <RotateCcw className="h-4 w-4 mr-1" />
+                          <RotateCcw className="h-4 w-4 mr-1" aria-hidden="true" />
                           Revert
                         </Button>
                       )}
@@ -351,7 +389,7 @@ export function TimelineViewer({ planId, onRevert }: TimelineViewerProps) {
 
                   {/* Expanded Details */}
                   {selectedEntry?.id === entry.id && (
-                    <div className="mt-4 pt-4 border-t">
+                    <div className="mt-4 pt-4 border-t" role="region" aria-label="Timeline entry details">
                       <div className="space-y-3">
                         <div>
                           <Label className="text-sm font-medium">Details</Label>
@@ -401,41 +439,49 @@ export function TimelineViewer({ planId, onRevert }: TimelineViewerProps) {
 
       {/* Revert Confirmation Dialog */}
       {showRevertConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md mx-4">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-orange-600" />
-                Confirm Revert
-              </CardTitle>
-              <CardDescription>
-                Are you sure you want to revert to version {showRevertConfirm}? This will:
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground mb-4">
-                <li>Create a backup of the current state</li>
-                <li>Restore the plan to version {showRevertConfirm}</li>
-                <li>This action will be recorded in the timeline</li>
-              </ul>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowRevertConfirm(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="default"
-                  onClick={() => handleRevert(showRevertConfirm)}
-                  className="bg-orange-600 hover:bg-orange-700"
-                >
-                  Revert
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <FocusTrap onEscape={() => setShowRevertConfirm(null)}>
+          <div 
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="revert-dialog-title"
+            aria-describedby="revert-dialog-description"
+          >
+            <Card className="w-full max-w-md mx-4">
+              <CardHeader>
+                <CardTitle as="h2" id="revert-dialog-title" className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-orange-600" aria-hidden="true" />
+                  Confirm Revert
+                </CardTitle>
+                <CardDescription id="revert-dialog-description">
+                  Are you sure you want to revert to version {showRevertConfirm}? This will:
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground mb-4">
+                  <li>Create a backup of the current state</li>
+                  <li>Restore the plan to version {showRevertConfirm}</li>
+                  <li>This action will be recorded in the timeline</li>
+                </ul>
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowRevertConfirm(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="default"
+                    onClick={() => handleRevert(showRevertConfirm)}
+                    className="bg-orange-600 hover:bg-orange-700"
+                  >
+                    Revert
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </FocusTrap>
       )}
     </div>
   )

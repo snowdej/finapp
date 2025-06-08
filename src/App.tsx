@@ -31,6 +31,8 @@ import { ScenarioManager } from './components/scenarios/ScenarioManager'
 import { ProjectionEngine } from './components/projections/ProjectionEngine'
 import { TimelineViewer } from './components/timeline/TimelineViewer'
 import { useChangeTracking } from './hooks/useChangeTracking'
+import { SkipLink } from './components/ui/skip-link'
+import { useAnnouncer } from './hooks/useAnnouncer'
 
 type TabId = 'dashboard' | 'people' | 'assets' | 'income' | 'commitments' | 'events' | 'scenarios' | 'projections' | 'timeline' | 'settings'
 
@@ -45,6 +47,8 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard')
   const [currentPlan, setCurrentPlan] = useState<any>(null)
   const [planId, setPlanId] = useState<string | null>(null)
+
+  const { announce } = useAnnouncer()
 
   // Enable autosave for the current plan
   useAutosave(currentPlan, !!currentPlan)
@@ -86,6 +90,14 @@ function App() {
       const updatedPlan = { ...currentPlan, activeScenarioId: scenarioId }
       setCurrentPlan(updatedPlan)
       // Auto-save will be triggered by useAutosave hook
+    }
+  }
+
+  const handleTabChange = (newTab: TabId) => {
+    setActiveTab(newTab)
+    const navItem = navItems.find(item => item.id === newTab)
+    if (navItem) {
+      announce(`Navigated to ${navItem.label} section`)
     }
   }
 
@@ -482,6 +494,10 @@ function App() {
   return (
     <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
       <div className="bg-background text-foreground">
+        {/* Skip Navigation */}
+        <SkipLink href="#main-content">Skip to main content</SkipLink>
+        <SkipLink href="#navigation">Skip to navigation</SkipLink>
+
         {/* Header */}
         <header className="border-b border-border bg-card">
           <div className="px-6 py-4 flex items-center justify-between">
@@ -491,31 +507,44 @@ function App() {
               size="sm"
               onClick={toggleDarkMode}
               aria-label={`Switch to ${darkMode ? 'light' : 'dark'} mode`}
+              aria-describedby="theme-description"
             >
-              {darkMode ? '☀️' : '🌙'}
+              <span aria-hidden="true">{darkMode ? '☀️' : '🌙'}</span>
+              <span className="sr-only">
+                {darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              </span>
             </Button>
+            <div id="theme-description" className="sr-only">
+              Theme toggle button. Currently in {darkMode ? 'dark' : 'light'} mode.
+            </div>
           </div>
         </header>
 
         <div className="flex">
           {/* Sidebar Navigation */}
-          <nav className="w-64 bg-card border-r border-border min-h-[calc(100vh-73px)]">
+          <nav 
+            id="navigation"
+            className="w-64 bg-card border-r border-border min-h-[calc(100vh-73px)]"
+            role="navigation"
+            aria-label="Main navigation"
+          >
             <div className="p-4">
-              <ul className="space-y-2">
+              <ul className="space-y-2" role="list">
                 {navItems.map((item) => {
                   const Icon = item.icon
                   return (
-                    <li key={item.id}>
+                    <li key={item.id} role="listitem">
                       <button
-                        onClick={() => setActiveTab(item.id)}
+                        onClick={() => handleTabChange(item.id)}
                         className={`w-full text-left px-3 py-2 rounded-md transition-colors flex items-center space-x-3 ${
                           activeTab === item.id
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                         }`}
-                        aria-label={`Navigate to ${item.label}`}
+                        aria-label={`Navigate to ${item.label} section`}
+                        aria-current={activeTab === item.id ? 'page' : undefined}
                       >
-                        <Icon className="w-4 h-4" />
+                        <Icon className="w-4 h-4" aria-hidden="true" />
                         <span>{item.label}</span>
                       </button>
                     </li>
@@ -526,8 +555,15 @@ function App() {
           </nav>
 
           {/* Main Content */}
-          <main className="flex-1 p-6">
-            {renderContent()}
+          <main 
+            id="main-content"
+            className="flex-1 p-6"
+            role="main"
+            aria-label="Main content area"
+          >
+            <div className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md">
+              {renderContent()}
+            </div>
           </main>
         </div>
       </div>

@@ -68,14 +68,14 @@
 * Apply changes only to selected scenario
 * Mark base scenario
 
-### 11. Calculations Engine - [ ]
+### 11. Calculations Engine - [x]
 
 * Year-by-year projection for each item
 * Manual override logic (apply from override year forward)
 * Category grouping, expand/collapse logic
 * Prevent negative investment balances; warnings for other negatives
 
-### 12. Reporting: Tables & Graphs - [ ]
+### 12. Reporting: Tables & Graphs - [x]
 
 * Yearly snapshot table with group/merge/expand/collapse
 * Recharts graphs (net worth, cashflow, assets, breakdowns)
@@ -83,7 +83,7 @@
 * Support for large datasets (virtual scroll if needed)
 * Export snapshot table as CSV
 
-### 13. Change Timeline (Git-Like History) - [ ]
+### 13. Change Timeline (Git-Like History) - [x]
 
 * Record all major interactions
 * View history, hard-revert to any point
@@ -203,7 +203,7 @@ Test scenario CRUD and switching behaviour.
 
 ---
 
-### \[Step 11] — **Projection Engine** - [ ]
+### \[Step 11] — **Projection Engine** - [x]
 
 ```text
 Write core functions to generate year-by-year projections for all people, assets, incomes, commitments, and events. Ensure manual overrides are respected, with new base after override year. Block negative investments, warn for other negatives.
@@ -213,7 +213,7 @@ Support grouping/merging by category for summary outputs. Write thorough unit te
 
 ---
 
-### \[Step 12] — **Tables & Graphs Reporting** - [ ]
+### \[Step 12] — **Tables & Graphs Reporting** - [x]
 
 ```text
 Build React-Table-based yearly snapshot with expand/collapse for categories. Implement merging/summarising (all ISAs, all income, all commitments) and detail toggles. Highlight manual overrides and warnings.
@@ -223,7 +223,7 @@ Add Recharts graphs: net worth, cashflow, asset breakdown, etc. Test with large 
 
 ---
 
-### \[Step 13] — **Git-Like Change Timeline** - [ ]
+### \[Step 13] — **Git-Like Change Timeline** - [x]
 
 ```text
 Implement timeline/history tracking for all major actions: add/remove/edit items, assumptions, overrides. Each log includes auto-generated summary, timestamp, plan/scenario.

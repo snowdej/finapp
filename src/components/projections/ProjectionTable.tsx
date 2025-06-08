@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { ProjectionSummary, groupProjectionsByCategory } from '../../utils/calculations'
 import { FinancialPlan } from '../../types'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { ChevronDown, ChevronRight, TrendingUp, TrendingDown, AlertTriangle, Download, Search } from 'lucide-react'
+import { generateAriaLabel, formatCurrencyForScreenReader, generateTableDescription } from '../../utils/accessibility'
+import { useAnnouncer } from '../../hooks/useAnnouncer'
 
 interface ProjectionTableProps {
   projectionSummary: ProjectionSummary
@@ -16,7 +18,9 @@ export function ProjectionTable({ projectionSummary, plan }: ProjectionTableProp
   const [selectedYear, setSelectedYear] = useState(projectionSummary.snapshots[0]?.year || new Date().getFullYear())
   const [searchTerm, setSearchTerm] = useState('')
   const [showOnlyWarnings, setShowOnlyWarnings] = useState(false)
-  
+  const [sortConfig, setSortConfig] = useState({ key: 'category', direction: 'asc' })
+  const { announce } = useAnnouncer()
+
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories)
     if (newExpanded.has(category)) {
@@ -26,25 +30,47 @@ export function ProjectionTable({ projectionSummary, plan }: ProjectionTableProp
     }
     setExpandedCategories(newExpanded)
   }
-  
+
+  const handleSort = useCallback((columnId: string) => {
+    const newDirection = sortConfig.key === columnId && sortConfig.direction === 'asc' ? 'desc' : 'asc'
+    setSortConfig({ key: columnId, direction: newDirection })
+
+    // Announce sort change
+    announce(`Table sorted by ${columnId} in ${newDirection}ending order`)
+  }, [sortConfig, announce])
+
+  const handleExpandToggle = useCallback((category: string) => {
+    setExpandedCategories(prev => {
+      const newExpanded = prev.has(category)
+        ? new Set([...prev].filter(cat => cat !== category))
+        : new Set([...prev, category])
+
+      const action = newExpanded.has(category) ? 'expanded' : 'collapsed'
+      announce(`${category} category ${action}`)
+
+      return newExpanded
+    })
+  }, [announce])
+
   const selectedSnapshot = projectionSummary.snapshots.find(s => s.year === selectedYear)
   if (!selectedSnapshot) return null
-  
+
   const groupedItems = groupProjectionsByCategory(selectedSnapshot.items, selectedYear)
-  
+
   // Filter items based on search and warning filter
   const filteredGroupedItems = Object.entries(groupedItems).reduce((acc, [category, data]) => {
     const filteredItems = data.items.filter(item => {
-      const matchesSearch = !searchTerm || 
+      const matchesSearch =
+        !searchTerm ||
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         category.toLowerCase().includes(searchTerm.toLowerCase())
-      
+
       const hasWarnings = item.warnings.some(w => w.year === selectedYear)
       const matchesWarningFilter = !showOnlyWarnings || hasWarnings
-      
+
       return matchesSearch && matchesWarningFilter
     })
-    
+
     if (filteredItems.length > 0) {
       acc[category] = {
         ...data,
@@ -52,16 +78,16 @@ export function ProjectionTable({ projectionSummary, plan }: ProjectionTableProp
         total: filteredItems.reduce((sum, item) => sum + (item.yearlyValues[selectedYear] || 0), 0)
       }
     }
-    
+
     return acc
   }, {} as typeof groupedItems)
-  
+
   const formatCurrency = (amount: number) => {
     const isNegative = amount < 0
     const formatted = `£${Math.abs(amount).toLocaleString()}`
     return isNegative ? `-${formatted}` : formatted
   }
-  
+
   const getCategoryIcon = (category: string, total: number) => {
     if (total > 0) return <TrendingUp className="h-4 w-4 text-green-600" />
     if (total < 0) return <TrendingDown className="h-4 w-4 text-red-600" />
@@ -70,19 +96,19 @@ export function ProjectionTable({ projectionSummary, plan }: ProjectionTableProp
 
   const exportCSV = () => {
     const csvData: string[][] = []
-    
+
     // Headers
     csvData.push(['Category', 'Item', 'Value', 'Owners', 'Has Overrides', 'Has Warnings'])
-    
+
     // Data rows
     Object.entries(filteredGroupedItems).forEach(([category, data]) => {
       data.items.forEach(item => {
         const value = item.yearlyValues[selectedYear] || 0
-        const owners = item.ownerIds.map(id => 
+        const owners = item.ownerIds.map(id =>
           plan.people.find(p => p.id === id)?.name
         ).filter(Boolean).join(', ')
         const hasWarnings = item.warnings.some(w => w.year === selectedYear)
-        
+
         csvData.push([
           category,
           item.name,
@@ -93,7 +119,7 @@ export function ProjectionTable({ projectionSummary, plan }: ProjectionTableProp
         ])
       })
     })
-    
+
     const csvContent = csvData.map(row => row.join(',')).join('\n')
     const blob = new Blob([csvContent], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
@@ -105,264 +131,131 @@ export function ProjectionTable({ projectionSummary, plan }: ProjectionTableProp
   }
 
   return (
-    <div className="space-y-6">
-      {/* Controls */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Data Controls</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-4 items-center">
-            {/* Year Selector */}
-            <div className="flex items-center gap-2">
-              <label htmlFor="year-select" className="text-sm font-medium">Year:</label>
-              <select
-                id="year-select"
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="border rounded px-3 py-1"
-              >
-                {projectionSummary.snapshots.map(snapshot => (
-                  <option key={snapshot.year} value={snapshot.year}>
-                    {snapshot.year}
-                  </option>
-                ))}
-              </select>
-            </div>
+    <div className="space-y-4">
+      {/* Table Description for Screen Readers */}
+      <div className="sr-only">
+        {generateTableDescription(
+          sortedData.length,
+          columns.length,
+          'Financial projection data'
+        )}
+      </div>
 
-            {/* Search */}
-            <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search items..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-48"
-              />
-            </div>
+      <div className="rounded-md border overflow-auto" role="region" aria-label="Financial projection table">
+        <table className="w-full caption-bottom text-sm" role="table">
+          <caption className="sr-only">
+            Financial projection showing yearly snapshots from {projectionSummary.snapshots[0]?.year} to {projectionSummary.snapshots[projectionSummary.snapshots.length - 1]?.year}.
+            Use arrow keys to navigate and space to sort columns.
+          </caption>
 
-            {/* Filter Controls */}
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="warnings-filter"
-                checked={showOnlyWarnings}
-                onChange={(e) => setShowOnlyWarnings(e.target.checked)}
-                className="rounded"
-              />
-              <label htmlFor="warnings-filter" className="text-sm font-medium">
-                Show only items with warnings
-              </label>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2 ml-auto">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setExpandedCategories(new Set(Object.keys(filteredGroupedItems)))}
-              >
-                Expand All
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setExpandedCategories(new Set())}
-              >
-                Collapse All
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportCSV}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Summary for Selected Year */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Financial Summary for {selectedYear}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-blue-600">
-                {formatCurrency(selectedSnapshot.totalAssets)}
-              </div>
-              <div className="text-sm text-muted-foreground">Total Assets</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(selectedSnapshot.totalIncome)}
-              </div>
-              <div className="text-sm text-muted-foreground">Total Income</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-red-600">
-                {formatCurrency(selectedSnapshot.totalCommitments)}
-              </div>
-              <div className="text-sm text-muted-foreground">Total Commitments</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold">
-                {formatCurrency(selectedSnapshot.netWorth)}
-              </div>
-              <div className="text-sm text-muted-foreground">Net Worth</div>
-            </div>
-            <div>
-              <div className={`text-2xl font-bold ${selectedSnapshot.cashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(selectedSnapshot.cashFlow)}
-              </div>
-              <div className="text-sm text-muted-foreground">Cash Flow</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Detailed Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Detailed Breakdown</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {Object.keys(filteredGroupedItems).length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {searchTerm || showOnlyWarnings ? 'No items match your filter criteria' : 'No data available'}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {Object.entries(filteredGroupedItems).map(([category, data]) => (
-                <div key={category} className="border rounded-lg">
-                  <div 
-                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50"
-                    onClick={() => toggleCategory(category)}
-                  >
-                    <div className="flex items-center gap-2">
-                      {expandedCategories.has(category) ? 
-                        <ChevronDown className="h-4 w-4" /> : 
-                        <ChevronRight className="h-4 w-4" />
-                      }
-                      <span className="font-medium">{category}</span>
-                      {getCategoryIcon(category, data.total)}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`font-bold ${data.total >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(data.total)}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        ({data.items.length} items)
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {expandedCategories.has(category) && (
-                    <div className="border-t bg-muted/20">
-                      {data.items.map(item => {
-                        const value = item.yearlyValues[selectedYear] || 0
-                        const hasWarnings = item.warnings.some(w => w.year === selectedYear)
-                        const warnings = item.warnings.filter(w => w.year === selectedYear)
-                        
-                        return (
-                          <div key={item.id} className="border-b last:border-b-0">
-                            <div className="flex items-center justify-between p-3 pl-8">
-                              <div className="flex items-center gap-2">
-                                <span>{item.name}</span>
-                                {item.hasOverrides && (
-                                  <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                                    Override
-                                  </span>
-                                )}
-                                {hasWarnings && (
-                                  <AlertTriangle className="h-4 w-4 text-orange-500" />
-                                )}
-                              </div>
-                              <div className="text-right">
-                                <div className={`font-medium ${value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  {formatCurrency(value)}
-                                </div>
-                                {item.ownerIds.length > 0 && (
-                                  <div className="text-xs text-muted-foreground">
-                                    {item.ownerIds.map(id => 
-                                      plan.people.find(p => p.id === id)?.name
-                                    ).filter(Boolean).join(', ')}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {/* Show warnings for this item */}
-                            {warnings.length > 0 && (
-                              <div className="px-8 pb-3">
-                                {warnings.map((warning, index) => (
-                                  <div key={index} className="text-xs text-orange-600 bg-orange-50 p-2 rounded border">
-                                    <strong>{warning.type.replace('_', ' ')}:</strong> {warning.message}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
+          <thead className="[&_tr]:border-b" role="rowgroup">
+            <tr role="row">
+              {columns.map((column) => (
+                <th
+                  key={column.id}
+                  role="columnheader"
+                  className={cn(
+                    "h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:bg-muted/50",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    column.className
                   )}
-                </div>
+                  tabIndex={0}
+                  onClick={() => handleSort(column.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleSort(column.id)
+                    }
+                  }}
+                  aria-sort={
+                    sortConfig.key === column.id
+                      ? sortConfig.direction === 'asc' ? 'ascending' : 'descending'
+                      : 'none'
+                  }
+                  aria-label={generateAriaLabel(`Sort by ${column.label}`, sortConfig.key === column.id ? `currently ${sortConfig.direction}ending` : 'not sorted')}
+                >
+                  <div className="flex items-center space-x-2">
+                    <span>{column.label}</span>
+                    {sortConfig.key === column.id && (
+                      <span aria-hidden="true">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </th>
               ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      {/* Year-over-Year Comparison Table (Compact) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Year-over-Year Summary (Key Years)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Year</th>
-                  <th className="text-right p-2">Net Worth</th>
-                  <th className="text-right p-2">Cash Flow</th>
-                  <th className="text-right p-2">Assets</th>
-                  <th className="text-center p-2">Warnings</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projectionSummary.snapshots.filter((_, index) => 
-                  index % 5 === 0 || index === projectionSummary.snapshots.length - 1
-                ).map(snapshot => (
-                  <tr 
-                    key={snapshot.year} 
-                    className={`border-b hover:bg-muted/50 ${snapshot.year === selectedYear ? 'bg-blue-50' : ''}`}
-                  >
-                    <td className="p-2 font-medium">{snapshot.year}</td>
-                    <td className="p-2 text-right font-medium">{formatCurrency(snapshot.netWorth)}</td>
-                    <td className={`p-2 text-right ${snapshot.cashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(snapshot.cashFlow)}
-                    </td>
-                    <td className="p-2 text-right">{formatCurrency(snapshot.totalAssets)}</td>
-                    <td className="p-2 text-center">
-                      {snapshot.warnings.length > 0 && (
-                        <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded">
-                          {snapshot.warnings.length}
+            </tr>
+          </thead>
+
+          <tbody className="[&_tr:last-child]:border-0" role="rowgroup">
+            {sortedData.map((row, rowIndex) => (
+              <tr
+                key={`${row.year}-${row.category}`}
+                role="row"
+                className="border-b transition-colors hover:bg-muted/50 focus-within:bg-muted/50"
+              >
+                {columns.map((column) => {
+                  const cellValue = row[column.id as keyof ProjectionRow]
+                  const isExpandable = column.id === 'category' && row.hasSubcategories
+
+                  return (
+                    <td
+                      key={column.id}
+                      role="gridcell"
+                      className={cn("p-4 align-middle", column.className)}
+                      aria-describedby={column.id === 'netWorth' ? `net-worth-description-${rowIndex}` : undefined}
+                    >
+                      {isExpandable ? (
+                        <button
+                          onClick={() => handleExpandToggle(row.category)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              handleExpandToggle(row.category)
+                            }
+                          }}
+                          className="flex items-center space-x-2 text-left hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                          aria-expanded={expandedCategories.has(row.category)}
+                          aria-label={`${expandedCategories.has(row.category) ? 'Collapse' : 'Expand'} ${row.category} category`}
+                        >
+                          <span aria-hidden="true">
+                            {expandedCategories.has(row.category) ? '▼' : '▶'}
+                          </span>
+                          <span>{cellValue}</span>
+                        </button>
+                      ) : (
+                        <span>
+                          {typeof cellValue === 'number'
+                            ? cellValue.toLocaleString('en-GB', {
+                              style: 'currency',
+                              currency: 'GBP',
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0
+                            })
+                            : cellValue
+                          }
+                        </span>
+                      )}
+
+                      {/* Hidden description for screen readers */}
+                      {column.id === 'netWorth' && typeof cellValue === 'number' && (
+                        <span id={`net-worth-description-${rowIndex}`} className="sr-only">
+                          Net worth for {row.year}: {formatCurrencyForScreenReader(cellValue)}
                         </span>
                       )}
                     </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Keyboard Instructions */}
+      <div className="text-xs text-muted-foreground mt-4" role="note">
+        <p><strong>Keyboard navigation:</strong> Use Tab to move between sortable headers, Enter or Space to sort, Tab to navigate expandable categories.</p>
+      </div>
     </div>
   )
 }
