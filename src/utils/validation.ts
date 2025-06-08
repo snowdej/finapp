@@ -304,3 +304,56 @@ export function validateCommitment(commitment: Partial<Commitment>, people: Pers
     errors
   }
 }
+
+export function validateEvent(event: Partial<Event>, people: Person[], assets: Asset[]): ValidationResult {
+  const errors: ValidationError[] = []
+
+  // Name validation (required)
+  if (!event.name || !event.name.trim()) {
+    errors.push({ field: 'name', message: 'Event name is required' })
+  }
+
+  // Year validation (required, reasonable)
+  if (!event.year) {
+    errors.push({ field: 'year', message: 'Event year is required' })
+  } else if (event.year < 1900 || event.year > 2200) {
+    errors.push({ field: 'year', message: 'Event year should be between 1900 and 2200' })
+  }
+
+  // Amount validation (required, can be negative for expenses)
+  if (event.amount === undefined || event.amount === null) {
+    errors.push({ field: 'amount', message: 'Event amount is required' })
+  }
+
+  // Type validation (required)
+  if (!event.type) {
+    errors.push({ field: 'type', message: 'Event type is required' })
+  }
+
+  // Recurring end year validation
+  if (event.isRecurring && event.recurringEndYear) {
+    if (event.recurringEndYear <= event.year!) {
+      errors.push({ field: 'recurringEndYear', message: 'Recurring end year must be after event year' })
+    }
+  }
+
+  // Affected persons validation (optional, but if provided should exist)
+  if (event.affectedPersonIds && event.affectedPersonIds.length > 0) {
+    const invalidPersons = event.affectedPersonIds.filter(id => !people.find(p => p.id === id))
+    if (invalidPersons.length > 0) {
+      errors.push({ field: 'affectedPersonIds', message: 'One or more selected people do not exist' })
+    }
+  }
+
+  // Linked asset validation (optional, but if provided should exist)
+  if (event.linkedAssetId) {
+    if (!assets.find(a => a.id === event.linkedAssetId)) {
+      errors.push({ field: 'linkedAssetId', message: 'Selected linked asset does not exist' })
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}

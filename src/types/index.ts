@@ -97,8 +97,12 @@ export interface Event {
   name: string
   year: number
   amount: number
-  type: 'income' | 'expense' | 'asset-change'
-  assetId?: string
+  type: 'income' | 'expense' | 'asset_change' | 'withdrawal' | 'deposit' | 'inheritance' | 'other'
+  description?: string
+  affectedPersonIds?: string[]
+  linkedAssetId?: string
+  isRecurring?: boolean
+  recurringEndYear?: number
   createdAt?: string
   updatedAt?: string
 }
@@ -144,5 +148,19 @@ export interface ChangeLog {
   action: string
   description: string
   data: any
+}
+
+// Change log types for git-like history
+export interface ChangeLogEntry {
+  id: string
+  timestamp: string
+  action: 'create' | 'update' | 'delete' | 'import' | 'scenario_switch'
+  entityType: 'person' | 'asset' | 'income' | 'commitment' | 'event' | 'plan' | 'scenario'
+  entityId: string
+  entityName: string
+  description: string
+  scenarioId?: string
+  previousState?: any
+  newState?: any
 }
 

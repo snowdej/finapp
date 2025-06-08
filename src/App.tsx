@@ -21,7 +21,8 @@ import { PeopleManager } from './components/people/PeopleManager'
 import { AssetManager } from './components/assets/AssetManager'
 import { IncomeManager } from './components/income/IncomeManager'
 import { CommitmentManager } from './components/commitments/CommitmentManager'
-import { Person, Asset, Income, Commitment } from './types'
+import { EventManager } from './components/events/EventManager'
+import { Person, Asset, Income, Commitment, Event } from './types'
 
 type TabId = 'dashboard' | 'people' | 'assets' | 'income' | 'commitments' | 'events' | 'scenarios' | 'settings'
 
@@ -137,6 +138,14 @@ function App() {
   const handleUpdateCommitments = (commitments: Commitment[]) => {
     if (currentPlan) {
       const updatedPlan = { ...currentPlan, commitments }
+      setCurrentPlan(updatedPlan)
+      // Auto-save will be triggered by useAutosave hook
+    }
+  }
+
+  const handleUpdateEvents = (events: Event[]) => {
+    if (currentPlan) {
+      const updatedPlan = { ...currentPlan, events }
       setCurrentPlan(updatedPlan)
       // Auto-save will be triggered by useAutosave hook
     }
@@ -308,6 +317,15 @@ function App() {
             people={currentPlan?.people || []}
             assets={currentPlan?.assets || []}
             onUpdateCommitments={handleUpdateCommitments}
+          />
+        )
+      case 'events':
+        return (
+          <EventManager
+            events={currentPlan?.events || []}
+            people={currentPlan?.people || []}
+            assets={currentPlan?.assets || []}
+            onUpdateEvents={handleUpdateEvents}
           />
         )
       case 'settings':
