@@ -3,8 +3,8 @@ import { AssumptionOverride, Asset, Income, Commitment } from '../../types'
 import { validateAssumptionOverride, generateId } from '../../utils/validation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
-import { OverrideForm } from './OverrideForm.tsx'
-import { OverrideCard } from './OverrideCard.tsx'
+import { OverrideForm } from './OverrideForm'
+import { OverrideCard } from './OverrideCard'
 import { Target, Plus } from 'lucide-react'
 
 interface OverridesManagerProps {
@@ -24,12 +24,6 @@ export function OverridesManager({
 }: OverridesManagerProps) {
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-
-  const allItems = [
-    ...assets.map(a => ({ ...a, itemType: 'asset' as const })),
-    ...income.map(i => ({ ...i, itemType: 'income' as const })),
-    ...commitments.map(c => ({ ...c, itemType: 'commitment' as const }))
-  ]
 
   const handleAddOverride = (overrideData: Partial<AssumptionOverride>) => {
     const validation = validateAssumptionOverride(overrideData)
@@ -61,8 +55,8 @@ export function OverridesManager({
       return validation.errors
     }
 
-    const updatedOverrides = overrides.map(override => 
-      override.id === editingId 
+    const updatedOverrides = overrides.map(override =>
+      override.id === editingId
         ? {
             ...override,
             entityType: overrideData.entityType!,
@@ -93,22 +87,37 @@ export function OverridesManager({
     setEditingId(null)
   }
 
+  const allItems = [
+    ...assets.map(a => ({ ...a, itemType: 'asset' as const })),
+    ...income.map(i => ({ ...i, itemType: 'income' as const })),
+    ...commitments.map(c => ({ ...c, itemType: 'commitment' as const }))
+  ]
+
   const getItemName = (entityType: string, entityId?: string): string => {
-    if (!entityId) return 'N/A'
-    const item = allItems.find(i => i.id === entityId && i.itemType === entityType)
-    return item ? item.name : 'Unknown Item'
+    if (!entityId) return 'All items in category'
+    
+    const item = allItems.find(i => i.id === entityId)
+    return item ? item.name : 'Unknown item'
+  }
+
+  const getCategoryOverrides = () => {
+    return overrides.filter(o => o.entityType === 'category')
+  }
+
+  const getItemOverrides = () => {
+    return overrides.filter(o => o.entityType !== 'category')
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-semibold">Assumption Overrides</h3>
-          <p className="text-muted-foreground">
-            Create specific overrides for categories or individual items
+          <h3 className="text-lg font-semibold">Assumption Overrides</h3>
+          <p className="text-sm text-muted-foreground">
+            Create specific overrides that take precedence over plan assumptions
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => setIsAdding(true)}
           disabled={isAdding || editingId !== null}
           className="flex items-center gap-2"
@@ -124,14 +133,12 @@ export function OverridesManager({
           <CardHeader>
             <CardTitle>Add New Override</CardTitle>
             <CardDescription>
-              Create a specific override for a category or individual item
+              Create an override for a specific category or individual item
             </CardDescription>
           </CardHeader>
           <CardContent>
             <OverrideForm
-              assets={assets}
-              income={income}
-              commitments={commitments}
+              items={allItems}
               onSubmit={handleAddOverride}
               onCancel={handleCancel}
               submitLabel="Add Override"
@@ -140,14 +147,14 @@ export function OverridesManager({
         </Card>
       )}
 
-      {/* Overrides List */}
+      {/* Overrides Display */}
       {overrides.length === 0 && !isAdding ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Target className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No overrides created yet</h3>
             <p className="text-muted-foreground text-center mb-4">
-              Create overrides to customize rates for specific categories or items
+              Create overrides to customize rates for specific categories or individual items
             </p>
             <Button onClick={() => setIsAdding(true)}>
               Create Your First Override
@@ -155,23 +162,52 @@ export function OverridesManager({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {overrides.map((override) => (
-            <OverrideCard
-              key={override.id}
-              override={override}
-              assets={assets}
-              income={income}
-              commitments={commitments}
-              itemName={getItemName(override.entityType, override.entityId)}
-              isEditing={editingId === override.id}
-              onEdit={() => setEditingId(override.id)}
-              onDelete={() => handleDeleteOverride(override.id)}
-              onSave={handleEditOverride}
-              onCancel={handleCancel}
-              disabled={isAdding || (editingId !== null && editingId !== override.id)}
-            />
-          ))}
+        <div className="space-y-6">
+          {/* Category Overrides */}
+          {getCategoryOverrides().length > 0 && (
+            <div>
+              <h4 className="text-md font-semibold mb-3">Category Overrides</h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                {getCategoryOverrides().map((override) => (
+                  <OverrideCard
+                    key={override.id}
+                    override={override}
+                    itemName={`All ${override.category} items`}
+                    isEditing={editingId === override.id}
+                    onEdit={() => setEditingId(override.id)}
+                    onDelete={() => handleDeleteOverride(override.id)}
+                    onSave={handleEditOverride}
+                    onCancel={handleCancel}
+                    items={allItems}
+                    disabled={isAdding || (editingId !== null && editingId !== override.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Item-Specific Overrides */}
+          {getItemOverrides().length > 0 && (
+            <div>
+              <h4 className="text-md font-semibold mb-3">Item-Specific Overrides</h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                {getItemOverrides().map((override) => (
+                  <OverrideCard
+                    key={override.id}
+                    override={override}
+                    itemName={getItemName(override.entityType, override.entityId)}
+                    isEditing={editingId === override.id}
+                    onEdit={() => setEditingId(override.id)}
+                    onDelete={() => handleDeleteOverride(override.id)}
+                    onSave={handleEditOverride}
+                    onCancel={handleCancel}
+                    items={allItems}
+                    disabled={isAdding || (editingId !== null && editingId !== override.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -188,15 +224,11 @@ export function OverridesManager({
                 <div className="text-sm text-muted-foreground">Total Overrides</div>
               </div>
               <div>
-                <div className="text-2xl font-bold">
-                  {overrides.filter(o => o.entityType === 'category').length}
-                </div>
+                <div className="text-2xl font-bold">{getCategoryOverrides().length}</div>
                 <div className="text-sm text-muted-foreground">Category Overrides</div>
               </div>
               <div>
-                <div className="text-2xl font-bold">
-                  {overrides.filter(o => o.entityId).length}
-                </div>
+                <div className="text-2xl font-bold">{getItemOverrides().length}</div>
                 <div className="text-sm text-muted-foreground">Item Overrides</div>
               </div>
               <div>

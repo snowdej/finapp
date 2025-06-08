@@ -57,7 +57,7 @@
 * Add/list/edit/delete custom future events (positive/negative, link to assets)
 * Show as timeline/list
 
-### 9. Assumptions & Overrides - [ ]
+### 9. Assumptions & Overrides - [x]
 
 * Edit plan-wide and category/item overrides for inflation/growth
 * Precedence logic: plan < category < item
@@ -183,7 +183,7 @@ Show all events in a timeline/list view. Record changes in the git-like history.
 
 ---
 
-### \[Step 9] — **Assumptions, Category, and Item Overrides** - [ ]
+### \[Step 9] — **Assumptions, Category, and Item Overrides** - [x]
 
 ```text
 Implement forms/settings for plan-wide, category, and per-item inflation/growth settings. Apply correct precedence: plan < category < item. Update UI to show current assumptions in use for each item.

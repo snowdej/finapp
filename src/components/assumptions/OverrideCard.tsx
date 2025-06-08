@@ -1,16 +1,14 @@
 import { useState } from 'react'
-import { AssumptionOverride, Asset, Income, Commitment, ValidationError } from '../../types'
+import { AssumptionOverride, ValidationError, Asset, Income, Commitment } from '../../types'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { OverrideForm } from './OverrideForm'
-import { Edit, Trash2, Target } from 'lucide-react'
+import { Edit, Trash2, Target, Clock } from 'lucide-react'
 
 interface OverrideCardProps {
   override: AssumptionOverride
-  assets: Asset[]
-  income: Income[]
-  commitments: Commitment[]
   itemName: string
+  items: Array<(Asset | Income | Commitment) & { itemType: 'asset' | 'income' | 'commitment' }>
   isEditing: boolean
   onEdit: () => void
   onDelete: () => void
@@ -21,10 +19,8 @@ interface OverrideCardProps {
 
 export function OverrideCard({
   override,
-  assets,
-  income,
-  commitments,
   itemName,
+  items,
   isEditing,
   onEdit,
   onDelete,
@@ -44,11 +40,18 @@ export function OverrideCard({
     }
   }
 
-  const getTargetDisplay = (): string => {
-    if (override.entityType === 'category') {
-      return `${override.category} (Category)`
+  const getOverrideTypeIcon = (type: string): string => {
+    switch (type) {
+      case 'growth': return '📈'
+      case 'inflation': return '💰'
+      case 'interest': return '🏦'
+      case 'tax': return '💸'
+      default: return '⚙️'
     }
-    return `${itemName} (${override.entityType})`
+  }
+
+  const formatValue = (value: number): string => {
+    return `${value >= 0 ? '+' : ''}${value}%`
   }
 
   const handleDelete = () => {
@@ -76,9 +79,7 @@ export function OverrideCard({
         <CardContent>
           <OverrideForm
             override={override}
-            assets={assets}
-            income={income}
-            commitments={commitments}
+            items={items}
             onSubmit={onSave}
             onCancel={onCancel}
             submitLabel="Save"
@@ -93,13 +94,16 @@ export function OverrideCard({
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
+            <span className="text-lg">{getOverrideTypeIcon(override.overrideType)}</span>
             <div>
-              <div className="text-sm font-normal text-muted-foreground capitalize">
-                {override.overrideType} Override
+              <div className="flex items-center gap-2">
+                {override.overrideType.charAt(0).toUpperCase() + override.overrideType.slice(1)} Override
+                {(override.startYear || override.endYear) && (
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                )}
               </div>
-              <div className={`font-bold ${getOverrideTypeColor(override.overrideType)}`}>
-                {override.value}%
+              <div className="text-sm font-normal text-muted-foreground">
+                {itemName}
               </div>
             </div>
           </div>
@@ -126,20 +130,29 @@ export function OverrideCard({
       </CardHeader>
       <CardContent>
         <div className="space-y-3 text-sm">
-          <div>
-            <span className="font-medium">Target:</span>
-            <div className="mt-1">{getTargetDisplay()}</div>
+          <div className="flex items-center justify-between">
+            <span className="font-medium">Rate:</span>
+            <span className={`font-bold text-lg ${getOverrideTypeColor(override.overrideType)}`}>
+              {formatValue(override.value)}
+            </span>
           </div>
-          
+
+          <div className="flex items-center justify-between">
+            <span className="font-medium">Target:</span>
+            <span className="capitalize">
+              {override.entityType === 'category' ? `All ${override.category}` : 'Specific Item'}
+            </span>
+          </div>
+
           {(override.startYear || override.endYear) && (
-            <div>
+            <div className="flex items-center justify-between">
               <span className="font-medium">Period:</span>
-              <div className="mt-1">
+              <span>
                 {override.startYear || 'Start'} - {override.endYear || 'End'}
-              </div>
+              </span>
             </div>
           )}
-          
+
           {override.description && (
             <div>
               <span className="font-medium">Description:</span>
@@ -147,7 +160,7 @@ export function OverrideCard({
             </div>
           )}
         </div>
-        
+
         {showDeleteConfirm && (
           <div className="mt-4 p-3 border border-destructive rounded-md bg-destructive/10">
             <p className="text-sm text-destructive mb-2">
