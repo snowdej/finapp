@@ -3,8 +3,8 @@ import { Income, Person, Asset } from '../../types'
 import { validateIncome, generateId } from '../../utils/validation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
-import { IncomeForm } from './IncomeForm.tsx'
-import { IncomeCard } from './IncomeCard.tsx'
+import { IncomeForm } from './IncomeForm'
+import { IncomeCard } from './IncomeCard'
 import { Wallet, Plus } from 'lucide-react'
 
 interface IncomeManagerProps {

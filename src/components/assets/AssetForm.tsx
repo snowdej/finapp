@@ -58,7 +58,7 @@ export function AssetForm({ asset, people, onSubmit, onCancel, submitLabel }: As
           id="name"
           value={formData.name || ''}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Will be auto-generated based on type"
+          placeholder="Will be auto-generated based on asset type if left blank"
         />
         {getFieldError('name') && (
           <p className="text-sm text-destructive">{getFieldError('name')}</p>

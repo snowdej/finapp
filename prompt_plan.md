@@ -45,14 +45,14 @@
 * Add/edit/remove multiple loans per asset
 * Manual override of asset value for a year
 
-### 7. Income & Commitments - [ ]
+### 7. Income & Commitments - [x]
 
 * List/add/edit/delete incomes and commitments
 * Assign owners (joint for adults, or assign to child)
 * Support all frequencies and per-item/category overrides
 * Specify income destinations and sources , cash, asset, external
 
-### 8. Events & Timeline - [ ]
+### 8. Events & Timeline - [x]
 
 * Add/list/edit/delete custom future events (positive/negative, link to assets)
 * Show as timeline/list
@@ -163,7 +163,7 @@ Implement validation to block negative investments. Support manual override of a
 
 ---
 
-### \[Step 7] — **Income & Commitments CRUD UI** - [ ]
+### \[Step 7] — **Income & Commitments CRUD UI** - [x]
 
 ```text
 Build UI for incomes and commitments, supporting all frequencies and per-item/category inflation/growth overrides. Assign joint (adults) or to child as needed.
@@ -173,7 +173,7 @@ Allow destination to be specified (cash, asset, or other). Validate and test CRU
 
 ---
 
-### \[Step 8] — **Events & Timeline Management** - [ ]
+### \[Step 8] — **Events & Timeline Management** - [x]
 
 ```text
 Create UI for listing, adding, editing, deleting custom future events. Allow linking to assets (for lump sum withdrawals, inheritances, liabilities).

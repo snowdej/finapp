@@ -22,7 +22,9 @@ import { AssetManager } from './components/assets/AssetManager'
 import { IncomeManager } from './components/income/IncomeManager'
 import { CommitmentManager } from './components/commitments/CommitmentManager'
 import { EventManager } from './components/events/EventManager'
-import { Person, Asset, Income, Commitment, Event } from './types'
+import { AssumptionsManager } from './components/assumptions/AssumptionsManager'
+import { getDefaultAssumptions } from './utils/assumptions'
+import { Person, Asset, Income, Commitment, Event, PlanAssumptions, AssumptionOverride } from './types'
 
 type TabId = 'dashboard' | 'people' | 'assets' | 'income' | 'commitments' | 'events' | 'scenarios' | 'settings'
 
@@ -57,6 +59,22 @@ function App() {
     localStorage.setItem('theme', newDarkMode ? 'dark' : 'light')
   }
 
+  const handleUpdateAssumptions = (assumptions: PlanAssumptions) => {
+    if (currentPlan) {
+      const updatedPlan = { ...currentPlan, assumptions }
+      setCurrentPlan(updatedPlan)
+      // Auto-save will be triggered by useAutosave hook
+    }
+  }
+
+  const handleUpdateOverrides = (overrides: AssumptionOverride[]) => {
+    if (currentPlan) {
+      const updatedPlan = { ...currentPlan, overrides }
+      setCurrentPlan(updatedPlan)
+      // Auto-save will be triggered by useAutosave hook
+    }
+  }
+
   // Load or create initial plan
   useEffect(() => {
     const initializePlan = async () => {
@@ -80,6 +98,8 @@ function App() {
             income: [],
             commitments: [],
             events: [],
+            assumptions: getDefaultAssumptions(),
+            overrides: [],
             createdAt: new Date().toISOString()
           }
           await savePlan(defaultPlan)
@@ -326,6 +346,19 @@ function App() {
             people={currentPlan?.people || []}
             assets={currentPlan?.assets || []}
             onUpdateEvents={handleUpdateEvents}
+          />
+        )
+      case 'scenarios':
+        return (
+          <AssumptionsManager
+            assumptions={currentPlan?.assumptions || getDefaultAssumptions()}
+            overrides={currentPlan?.overrides || []}
+            people={currentPlan?.people || []}
+            assets={currentPlan?.assets || []}
+            income={currentPlan?.income || []}
+            commitments={currentPlan?.commitments || []}
+            onUpdateAssumptions={handleUpdateAssumptions}
+            onUpdateOverrides={handleUpdateOverrides}
           />
         )
       case 'settings':

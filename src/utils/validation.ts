@@ -1,4 +1,4 @@
-import { Person, ValidationError, ValidationResult, Sex, Asset, Loan, Income, Commitment } from '../types'
+import { Person, ValidationError, ValidationResult, Sex, Asset, Loan, Income, Commitment, Event, PlanAssumptions, AssumptionOverride } from '../types'
 
 function isValidName(name: string): boolean {
   return !!(name && name.trim().length > 0)
@@ -308,9 +308,9 @@ export function validateCommitment(commitment: Partial<Commitment>, people: Pers
 export function validateEvent(event: Partial<Event>, people: Person[], assets: Asset[]): ValidationResult {
   const errors: ValidationError[] = []
 
-  // Name validation (required)
-  if (!event.name || !event.name.trim()) {
-    errors.push({ field: 'name', message: 'Event name is required' })
+  // Name validation (optional since we auto-generate)
+  if (event.name && !isValidName(event.name)) {
+    errors.push({ field: 'name', message: 'Name cannot be empty or just whitespace' })
   }
 
   // Year validation (required, reasonable)
@@ -350,6 +350,127 @@ export function validateEvent(event: Partial<Event>, people: Person[], assets: A
     if (!assets.find(a => a.id === event.linkedAssetId)) {
       errors.push({ field: 'linkedAssetId', message: 'Selected linked asset does not exist' })
     }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}
+
+export function validatePlanAssumptions(assumptions: Partial<PlanAssumptions>): ValidationResult {
+  const errors: ValidationError[] = []
+
+  // Inflation rate validation (required, reasonable range)
+  if (assumptions.inflationRate === undefined || assumptions.inflationRate === null) {
+    errors.push({ field: 'inflationRate', message: 'Inflation rate is required' })
+  } else if (assumptions.inflationRate < -10 || assumptions.inflationRate > 20) {
+    errors.push({ field: 'inflationRate', message: 'Inflation rate should be between -10% and 20%' })
+  }
+
+  // Income growth rate validation (required, reasonable range)
+  if (assumptions.incomeGrowthRate === undefined || assumptions.incomeGrowthRate === null) {
+    errors.push({ field: 'incomeGrowthRate', message: 'Income growth rate is required' })
+  } else if (assumptions.incomeGrowthRate < -10 || assumptions.incomeGrowthRate > 30) {
+    errors.push({ field: 'incomeGrowthRate', message: 'Income growth rate should be between -10% and 30%' })
+  }
+
+  // Commitment growth rate validation (required, reasonable range)
+  if (assumptions.commitmentGrowthRate === undefined || assumptions.commitmentGrowthRate === null) {
+    errors.push({ field: 'commitmentGrowthRate', message: 'Commitment growth rate is required' })
+  } else if (assumptions.commitmentGrowthRate < -5 || assumptions.commitmentGrowthRate > 15) {
+    errors.push({ field: 'commitmentGrowthRate', message: 'Commitment growth rate should be between -5% and 15%' })
+  }
+
+  // Retirement age validation (required, reasonable range)
+  if (assumptions.retirementAge === undefined || assumptions.retirementAge === null) {
+    errors.push({ field: 'retirementAge', message: 'Retirement age is required' })
+  } else if (assumptions.retirementAge < 50 || assumptions.retirementAge > 80) {
+    errors.push({ field: 'retirementAge', message: 'Retirement age should be between 50 and 80' })
+  }
+
+  // Life expectancy validation (required, reasonable range)
+  if (assumptions.lifeExpectancy === undefined || assumptions.lifeExpectancy === null) {
+    errors.push({ field: 'lifeExpectancy', message: 'Life expectancy is required' })
+  } else if (assumptions.lifeExpectancy < 70 || assumptions.lifeExpectancy > 120) {
+    errors.push({ field: 'lifeExpectancy', message: 'Life expectancy should be between 70 and 120' })
+  }
+
+  // Asset growth rates validation (each should be reasonable)
+  if (assumptions.assetGrowthRates) {
+    Object.entries(assumptions.assetGrowthRates).forEach(([assetType, rate]) => {
+      if (rate < -20 || rate > 50) {
+        errors.push({ 
+          field: `assetGrowthRates.${assetType}`, 
+          message: `${assetType} growth rate should be between -20% and 50%` 
+        })
+      }
+    })
+  }
+
+  // Tax rates validation
+  if (assumptions.taxRates) {
+    const { income, capitalGains, inheritanceTax } = assumptions.taxRates
+    
+    if (income !== undefined && (income < 0 || income > 70)) {
+      errors.push({ field: 'taxRates.income', message: 'Income tax rate should be between 0% and 70%' })
+    }
+    
+    if (capitalGains !== undefined && (capitalGains < 0 || capitalGains > 50)) {
+      errors.push({ field: 'taxRates.capitalGains', message: 'Capital gains tax rate should be between 0% and 50%' })
+    }
+    
+    if (inheritanceTax !== undefined && (inheritanceTax < 0 || inheritanceTax > 60)) {
+      errors.push({ field: 'taxRates.inheritanceTax', message: 'Inheritance tax rate should be between 0% and 60%' })
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}
+
+export function validateAssumptionOverride(override: Partial<AssumptionOverride>): ValidationResult {
+  const errors: ValidationError[] = []
+
+  // Entity type validation (required)
+  if (!override.entityType) {
+    errors.push({ field: 'entityType', message: 'Entity type is required' })
+  }
+
+  // Override type validation (required)
+  if (!override.overrideType) {
+    errors.push({ field: 'overrideType', message: 'Override type is required' })
+  }
+
+  // Value validation (required, reasonable range based on type)
+  if (override.value === undefined || override.value === null) {
+    errors.push({ field: 'value', message: 'Override value is required' })
+  } else {
+    switch (override.overrideType) {
+      case 'inflation':
+      case 'growth':
+        if (override.value < -50 || override.value > 100) {
+          errors.push({ field: 'value', message: 'Rate should be between -50% and 100%' })
+        }
+        break
+      case 'interest':
+        if (override.value < 0 || override.value > 50) {
+          errors.push({ field: 'value', message: 'Interest rate should be between 0% and 50%' })
+        }
+        break
+      case 'tax':
+        if (override.value < 0 || override.value > 100) {
+          errors.push({ field: 'value', message: 'Tax rate should be between 0% and 100%' })
+        }
+        break
+    }
+  }
+
+  // Year validation (start year should be before end year if both provided)
+  if (override.startYear && override.endYear && override.startYear >= override.endYear) {
+    errors.push({ field: 'endYear', message: 'End year must be after start year' })
   }
 
   return {

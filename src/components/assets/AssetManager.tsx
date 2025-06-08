@@ -27,7 +27,7 @@ export function AssetManager({ assets, people, onUpdateAssets }: AssetManagerPro
 
   const calculateTotalValue = (): number => {
     return assets.reduce((sum, asset) => {
-      const netValue = asset.currentValue - (asset.loans?.reduce((loanSum, loan) => loanSum + (loan.remainingBalance || loan.amount), 0) || 0)
+      const netValue = asset.currentValue - (asset.loans?.reduce((loanSum, loan) => loanSum + loan.amount, 0) || 0)
       return sum + netValue
     }, 0)
   }
@@ -47,7 +47,6 @@ export function AssetManager({ assets, people, onUpdateAssets }: AssetManagerPro
       growthRate: assetData.growthRate,
       inflationRate: assetData.inflationRate,
       loans: [],
-      manualOverrides: [],
       createdAt: new Date().toISOString()
     }
 

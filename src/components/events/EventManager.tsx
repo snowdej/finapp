@@ -3,9 +3,9 @@ import { Event, Person, Asset } from '../../types'
 import { validateEvent, generateId } from '../../utils/validation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
-import { EventForm } from './EventForm.tsx'
-import { EventCard } from './EventCard.tsx'
-import { EventTimeline } from './EventTimeline.tsx'
+import { EventForm } from './EventForm'
+import { EventCard } from './EventCard'
+import { EventTimeline } from './EventTimeline'
 import { Calendar, Plus, Clock } from 'lucide-react'
 
 interface EventManagerProps {
@@ -195,37 +195,39 @@ export function EventManager({ events, people, assets, onUpdateEvents }: EventMa
             </Button>
           </CardContent>
         </Card>
-      ) : viewMode === 'timeline' ? (
-        <EventTimeline
-          events={events}
-          people={people}
-          assets={assets}
-          getAffectedPersonNames={getAffectedPersonNames}
-          getLinkedAssetName={getLinkedAssetName}
-          onEdit={setEditingId}
-          onDelete={handleDeleteEvent}
-          disabled={isAdding || editingId !== null}
-        />
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {events.map((event) => (
-            <EventCard
-              key={event.id}
-              event={event}
-              people={people}
-              assets={assets}
-              affectedPersonNames={getAffectedPersonNames(event.affectedPersonIds || [])}
-              linkedAssetName={getLinkedAssetName(event.linkedAssetId)}
-              isEditing={editingId === event.id}
-              onEdit={() => setEditingId(event.id)}
-              onDelete={() => handleDeleteEvent(event.id)}
-              onSave={handleEditEvent}
-              onCancel={handleCancel}
-              disabled={isAdding || (editingId !== null && editingId !== event.id)}
-            />
-          ))}
-        </div>
-      )}
+      ) : events.length > 0 ? (
+        viewMode === 'timeline' ? (
+          <EventTimeline
+            events={events}
+            people={people}
+            assets={assets}
+            getAffectedPersonNames={getAffectedPersonNames}
+            getLinkedAssetName={getLinkedAssetName}
+            onEdit={setEditingId}
+            onDelete={handleDeleteEvent}
+            disabled={isAdding || editingId !== null}
+          />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {events.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                people={people}
+                assets={assets}
+                affectedPersonNames={getAffectedPersonNames(event.affectedPersonIds || [])}
+                linkedAssetName={getLinkedAssetName(event.linkedAssetId)}
+                isEditing={editingId === event.id}
+                onEdit={() => setEditingId(event.id)}
+                onDelete={() => handleDeleteEvent(event.id)}
+                onSave={handleEditEvent}
+                onCancel={handleCancel}
+                disabled={isAdding || (editingId !== null && editingId !== event.id)}
+              />
+            ))}
+          </div>
+        )
+      ) : null}
 
       {/* Summary */}
       {events.length > 0 && (

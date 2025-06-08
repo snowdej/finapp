@@ -121,13 +121,15 @@ export function generateId(prefix?: string): string {
  * Generate default names for entities
  */
 export function generateDefaultName(prefix: string, existingNames: string[]): string {
-  const existingNumbers = existingNames
-    .filter(name => name.startsWith(`${prefix} `))
-    .map(name => parseInt(name.replace(`${prefix} `, '')))
-    .filter(num => !isNaN(num))
+  let counter = 1
+  let name = `${prefix} ${counter}`
   
-  const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1
-  return `${prefix} ${nextNumber}`
+  while (existingNames.includes(name)) {
+    counter++
+    name = `${prefix} ${counter}`
+  }
+  
+  return name
 }
 
 /**
@@ -136,3 +138,9 @@ export function generateDefaultName(prefix: string, existingNames: string[]): st
 export function formatPercentage(value: number): string {
   return `${value.toFixed(1)}%`
 }
+
+// Re-export commonly used validation functions
+export { 
+  validatePerson, 
+  generateId as generateDefaultId
+} from './validation'

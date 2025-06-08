@@ -34,7 +34,7 @@ export function AssetCard({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showLoans, setShowLoans] = useState(false)
 
-  const totalLoanAmount = asset.loans?.reduce((sum, loan) => sum + (loan.remainingBalance || loan.amount), 0) || 0
+  const totalLoanAmount = asset.loans?.reduce((sum, loan) => sum + loan.amount, 0) || 0
   const netValue = asset.currentValue - totalLoanAmount
 
   const handleDelete = () => {

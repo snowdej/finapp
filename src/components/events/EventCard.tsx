@@ -188,9 +188,8 @@ export function EventCard({
             <div className="flex gap-2">
               <Button
                 size="sm"
-                variant="outline"
+                variant="default"
                 onClick={handleDelete}
-                className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
               >
                 Confirm
               </Button>

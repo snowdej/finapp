@@ -1,4 +1,4 @@
-// Core person types
+// Basic person types
 export enum Sex {
   M = 'M',
   F = 'F'
@@ -9,35 +9,24 @@ export interface Person {
   name: string
   dateOfBirth: string
   sex: Sex
-}
-
-// Validation types
-export interface ValidationError {
-  field: string
-  message: string
-}
-
-export interface ValidationResult {
-  isValid: boolean
-  errors: ValidationError[]
-}
-
-// Asset types
-export interface Asset {
-  id: string
-  name: string
-  type: 'ISA' | 'SIPP' | 'Property' | 'Stocks' | 'Bonds' | 'Cash' | 'Other'
-  currentValue: number
-  ownerIds: string[]
-  growthRate?: number
-  inflationRate?: number
-  loans?: Loan[]
-  manualOverrides?: AssetOverride[]
   createdAt?: string
   updatedAt?: string
 }
 
-// Loan types
+// Asset and loan types
+export interface Asset {
+  id: string
+  name: string
+  type: 'ISA' | 'SIPP' | 'Property' | 'Cash' | 'Premium Bonds' | 'Investment' | 'Crypto' | 'Other'
+  currentValue: number
+  ownerIds: string[]
+  loans?: Loan[]
+  growthRate?: number
+  inflationRate?: number
+  createdAt?: string
+  updatedAt?: string
+}
+
 export interface Loan {
   id: string
   name: string
@@ -45,19 +34,14 @@ export interface Loan {
   interestRate: number
   termYears: number
   startDate: string
+  assetId?: string
   monthlyPayment?: number
   remainingBalance?: number
+  createdAt?: string
+  updatedAt?: string
 }
 
-// Asset override types
-export interface AssetOverride {
-  id: string
-  year: number
-  value: number
-  note?: string
-}
-
-// Income types
+// Income and commitment types
 export interface Income {
   id: string
   name: string
@@ -66,7 +50,7 @@ export interface Income {
   startYear: number
   endYear?: number
   ownerIds: string[]
-  destination?: 'cash' | 'asset' | 'external'
+  destination: 'cash' | 'asset' | 'external'
   destinationAssetId?: string
   growthRate?: number
   inflationRate?: number
@@ -74,7 +58,6 @@ export interface Income {
   updatedAt?: string
 }
 
-// Commitment types
 export interface Commitment {
   id: string
   name: string
@@ -83,7 +66,7 @@ export interface Commitment {
   startYear: number
   endYear?: number
   ownerIds: string[]
-  source?: 'cash' | 'asset' | 'external'
+  source: 'cash' | 'asset' | 'external'
   sourceAssetId?: string
   growthRate?: number
   inflationRate?: number
@@ -107,47 +90,38 @@ export interface Event {
   updatedAt?: string
 }
 
-// Plan types
-export interface FinancialPlan {
-  id: string
-  name: string
-  people: Person[]
-  assets: Asset[]
-  income: Income[]
-  commitments: Commitment[]
-  events: Event[]
-  createdAt: string
-  updatedAt?: string
-}
-
-// Scenario types
-export interface Scenario {
-  id: string
-  planId: string
-  name: string
-  isBase: boolean
-  assumptions: Assumptions
-  createdAt: string
-  updatedAt?: string
-}
-
-// Assumptions types
-export interface Assumptions {
+// Assumptions and overrides types
+export interface PlanAssumptions {
+  id?: string
+  planId?: string
   inflationRate: number
   incomeGrowthRate: number
   assetGrowthRates: Record<string, number>
-  taxRates?: Record<string, number>
+  commitmentGrowthRate: number
+  interestRates: Record<string, number>
+  retirementAge: number
+  lifeExpectancy: number
+  taxRates: {
+    income: number
+    capitalGains: number
+    inheritanceTax: number
+  }
+  createdAt?: string
+  updatedAt?: string
 }
 
-// Change log types
-export interface ChangeLog {
+export interface AssumptionOverride {
   id: string
-  planId: string
-  scenarioId?: string
-  timestamp: string
-  action: string
-  description: string
-  data: any
+  entityType: 'asset' | 'income' | 'commitment' | 'category'
+  entityId?: string
+  category?: string
+  overrideType: 'inflation' | 'growth' | 'interest' | 'tax'
+  value: number
+  startYear?: number
+  endYear?: number
+  description?: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 // Change log types for git-like history
@@ -162,5 +136,53 @@ export interface ChangeLogEntry {
   scenarioId?: string
   previousState?: any
   newState?: any
+}
+
+// Enhanced types with assumption integration
+export interface FinancialPlan {
+  id: string
+  name: string
+  people: Person[]
+  assets: Asset[]
+  income: Income[]
+  commitments: Commitment[]
+  events: Event[]
+  assumptions: PlanAssumptions
+  overrides: AssumptionOverride[]
+  createdAt: string
+  updatedAt?: string
+}
+
+// Validation types
+export interface ValidationError {
+  field: string
+  message: string
+}
+
+export interface ValidationResult {
+  isValid: boolean
+  errors: ValidationError[]
+}
+
+// Scenario types
+export interface Scenario {
+  id: string
+  name: string
+  planId: string
+  isBase: boolean
+  assumptions: PlanAssumptions
+  createdAt: string
+  updatedAt?: string
+}
+
+// Change log types
+export interface ChangeLog {
+  id: string
+  planId: string
+  scenarioId?: string
+  timestamp: string
+  action: string
+  description: string
+  data: any
 }
 

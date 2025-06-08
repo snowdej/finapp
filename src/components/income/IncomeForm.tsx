@@ -26,7 +26,7 @@ export function IncomeForm({ income, people, assets, onSubmit, onCancel, submitL
     ownerIds: income?.ownerIds || [],
     destination: income?.destination || 'cash',
     destinationAssetId: income?.destinationAssetId,
-    growthRate: income?.growthRate || 3,
+    growthRate: income?.growthRate || 3.0,
     inflationRate: income?.inflationRate || 2.5
   })
   const [errors, setErrors] = useState<ValidationError[]>([])
