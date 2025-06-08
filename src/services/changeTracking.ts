@@ -1,6 +1,6 @@
-import { ChangeLogEntry, ChangeTimelineState, RevertOptions, FinancialPlan } from '../types'
+import { ChangeLogEntry, ChangeTimelineState, RevertOptions } from '../types'
 import { generateId, deepClone } from '../utils/validation'
-import { savePlan, loadPlan } from './storage'
+import { loadPlan, savePlan } from './storage'
 
 class ChangeTrackingService {
   private static instance: ChangeTrackingService
@@ -34,7 +34,7 @@ class ChangeTrackingService {
       try {
         this.timeline = JSON.parse(stored)
       } catch (error) {
-        console.error('Failed to load timeline:', error)
+        console.error('Failed to parse timeline:', error)
         this.timeline = { currentVersion: 0, entries: [] }
       }
     } else {
@@ -244,22 +244,12 @@ class ChangeTrackingService {
   // Import timeline from JSON
   async importTimeline(timelineJson: string): Promise<boolean> {
     try {
-      const imported = JSON.parse(timelineJson)
-      
-      // Validate structure
-      if (!imported.currentVersion && imported.currentVersion !== 0) {
-        throw new Error('Invalid timeline format: missing currentVersion')
-      }
-      
-      if (!Array.isArray(imported.entries)) {
-        throw new Error('Invalid timeline format: entries must be array')
-      }
-
-      this.timeline = imported
+      const importedTimeline = JSON.parse(timelineJson)
+      this.timeline = importedTimeline
       await this.saveTimeline()
       return true
     } catch (error) {
-      console.error('Failed to import timeline:', error)
+      console.error('Import failed:', error)
       return false
     }
   }

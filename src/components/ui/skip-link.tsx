@@ -1,4 +1,4 @@
-import { Button } from "./button"
+import * as React from "react"
 import { cn } from "../../utils/cn"
 
 interface SkipLinkProps {
@@ -9,17 +9,19 @@ interface SkipLinkProps {
 
 export function SkipLink({ href, children, className }: SkipLinkProps) {
   return (
-    <Button
-      asChild
-      variant="outline"
+    <a
+      href={href}
       className={cn(
         "sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50",
-        "bg-background border-2 border-primary text-primary",
-        "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors",
+        "bg-primary text-primary-foreground hover:bg-primary/90",
+        "h-10 px-4 py-2",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "disabled:pointer-events-none disabled:opacity-50",
         className
       )}
     >
-      <a href={href}>{children}</a>
-    </Button>
+      {children}
+    </a>
   )
 }
