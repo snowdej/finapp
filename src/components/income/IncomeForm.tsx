@@ -3,6 +3,7 @@ import { Income, Person, Asset, ValidationError } from '../../types'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
+import { getCurrentYear } from '../../utils'
 
 interface IncomeFormProps {
   income?: Income
@@ -14,7 +15,7 @@ interface IncomeFormProps {
 }
 
 export function IncomeForm({ income, people, assets, onSubmit, onCancel, submitLabel }: IncomeFormProps) {
-  const currentYear = new Date().getFullYear()
+  const currentYear = getCurrentYear()
   
   const [formData, setFormData] = useState<Partial<Income>>({
     name: income?.name || '',
@@ -93,10 +94,10 @@ export function IncomeForm({ income, people, assets, onSubmit, onCancel, submitL
           <Label htmlFor="frequency">Frequency *</Label>
           <select
             id="frequency"
-            title="Frequency"
             value={formData.frequency || ''}
             onChange={(e) => setFormData({ ...formData, frequency: e.target.value as Income['frequency'] })}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            title="Select the frequency of income payments"
             required
           >
             <option value="weekly">Weekly</option>
@@ -154,7 +155,7 @@ export function IncomeForm({ income, people, assets, onSubmit, onCancel, submitL
               checked={formData.ownerIds?.length === people.length}
               onChange={handleSelectAllOwners}
               className="rounded border-gray-300"
-              title="Select all people as owners"
+              title="Select all people as owners of this income"
             />
             <Label htmlFor="select-all-income" className="text-sm font-medium">
               Select All ({people.length} people)
@@ -168,7 +169,7 @@ export function IncomeForm({ income, people, assets, onSubmit, onCancel, submitL
                 checked={formData.ownerIds?.includes(person.id) || false}
                 onChange={(e) => handleOwnerChange(person.id, e.target.checked)}
                 className="rounded border-gray-300"
-                title={`Select ${person.name} as owner`}
+                title={`Select ${person.name} as an owner of this income`}
               />
               <Label htmlFor={`income-owner-${person.id}`} className="text-sm">
                 {person.name}
@@ -185,10 +186,10 @@ export function IncomeForm({ income, people, assets, onSubmit, onCancel, submitL
         <Label htmlFor="destination">Destination</Label>
         <select
           id="destination"
-          title="Destination"
           value={formData.destination || 'cash'}
           onChange={(e) => setFormData({ ...formData, destination: e.target.value as Income['destination'], destinationAssetId: undefined })}
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          title="Select where the income should be deposited"
         >
           <option value="cash">Cash</option>
           <option value="asset">Specific Asset</option>
@@ -201,10 +202,10 @@ export function IncomeForm({ income, people, assets, onSubmit, onCancel, submitL
           <Label htmlFor="destinationAsset">Destination Asset</Label>
           <select
             id="destinationAsset"
-            title="Destination Asset"
             value={formData.destinationAssetId || ''}
             onChange={(e) => setFormData({ ...formData, destinationAssetId: e.target.value })}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            title="Select the destination asset for this income"
           >
             <option value="">Select asset</option>
             {assets.map((asset) => (
