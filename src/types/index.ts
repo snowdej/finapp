@@ -127,15 +127,29 @@ export interface AssumptionOverride {
 // Change log types for git-like history
 export interface ChangeLogEntry {
   id: string
-  timestamp: string
-  action: 'create' | 'update' | 'delete' | 'import' | 'scenario_switch'
-  entityType: 'person' | 'asset' | 'income' | 'commitment' | 'event' | 'plan' | 'scenario'
-  entityId: string
-  entityName: string
-  description: string
+  planId: string
   scenarioId?: string
-  previousState?: any
-  newState?: any
+  timestamp: string
+  actionType: 'create' | 'update' | 'delete' | 'import' | 'revert'
+  entityType: 'person' | 'asset' | 'income' | 'commitment' | 'event' | 'scenario' | 'assumptions' | 'plan'
+  entityId?: string
+  summary: string
+  details: string
+  beforeSnapshot?: any
+  afterSnapshot?: any
+  userId?: string
+  version: number
+}
+
+export interface ChangeTimelineState {
+  currentVersion: number
+  entries: ChangeLogEntry[]
+  lastSnapshot?: any
+}
+
+export interface RevertOptions {
+  preserveSubsequentChanges?: boolean
+  createBackup?: boolean
 }
 
 // Scenario types

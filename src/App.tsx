@@ -10,7 +10,8 @@ import {
   GitBranch, 
   Settings,
   LayoutDashboard,
-  LucideIcon
+  LucideIcon,
+  History
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card'
 import { Button } from './components/ui/button'
@@ -28,8 +29,10 @@ import { generateId } from './utils/validation'
 import { Person, Asset, Income, Commitment, Event, PlanAssumptions, AssumptionOverride, Scenario } from './types'
 import { ScenarioManager } from './components/scenarios/ScenarioManager'
 import { ProjectionEngine } from './components/projections/ProjectionEngine'
+import { TimelineViewer } from './components/timeline/TimelineViewer'
+import { useChangeTracking } from './hooks/useChangeTracking'
 
-type TabId = 'dashboard' | 'people' | 'assets' | 'income' | 'commitments' | 'events' | 'scenarios' | 'projections' | 'settings'
+type TabId = 'dashboard' | 'people' | 'assets' | 'income' | 'commitments' | 'events' | 'scenarios' | 'projections' | 'timeline' | 'settings'
 
 interface NavItem {
   id: TabId;
@@ -78,15 +81,7 @@ function App() {
     }
   }
 
-  const handleUpdateScenarios = (scenarios: Scenario[]) => {
-    if (currentPlan) {
-      const updatedPlan = { ...currentPlan, scenarios }
-      setCurrentPlan(updatedPlan)
-      // Auto-save will be triggered by useAutosave hook
-    }
-  }
-
-  const handleSetActiveScenario = (scenarioId: string) => {
+  const handleSetActiveScenario = async (scenarioId: string) => {
     if (currentPlan) {
       const updatedPlan = { ...currentPlan, activeScenarioId: scenarioId }
       setCurrentPlan(updatedPlan)
@@ -148,6 +143,9 @@ function App() {
     initializePlan()
   }, [])
 
+  // Initialize change tracking
+  const { trackChange } = useChangeTracking(planId, currentPlan)
+
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'people', label: 'People', icon: Users },
@@ -157,6 +155,7 @@ function App() {
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'scenarios', label: 'Scenarios', icon: GitBranch },
     { id: 'projections', label: 'Projections', icon: TrendingUp },
+    { id: 'timeline', label: 'Timeline', icon: History },
     { id: 'settings', label: 'Settings', icon: Settings }
   ]
 
@@ -166,43 +165,72 @@ function App() {
     // You could load the new plan here if desired
   }
 
-  const handleUpdatePeople = (people: Person[]) => {
+  const handleUpdatePeople = async (people: Person[]) => {
     if (currentPlan) {
+      const beforeData = currentPlan.people
       const updatedPlan = { ...currentPlan, people }
       setCurrentPlan(updatedPlan)
-      // Auto-save will be triggered by useAutosave hook
+      await trackChange('update', { ...currentPlan, people: beforeData })
     }
   }
 
-  const handleUpdateAssets = (assets: Asset[]) => {
+  const handleUpdateAssets = async (assets: Asset[]) => {
     if (currentPlan) {
+      const beforeData = currentPlan.assets
       const updatedPlan = { ...currentPlan, assets }
       setCurrentPlan(updatedPlan)
-      // Auto-save will be triggered by useAutosave hook
+      await trackChange('update', { ...currentPlan, assets: beforeData })
     }
   }
 
-  const handleUpdateIncome = (income: Income[]) => {
+  const handleUpdateIncome = async (income: Income[]) => {
     if (currentPlan) {
+      const beforeData = currentPlan.income
       const updatedPlan = { ...currentPlan, income }
       setCurrentPlan(updatedPlan)
-      // Auto-save will be triggered by useAutosave hook
+      await trackChange('update', { ...currentPlan, income: beforeData })
     }
   }
 
-  const handleUpdateCommitments = (commitments: Commitment[]) => {
+  const handleUpdateCommitments = async (commitments: Commitment[]) => {
     if (currentPlan) {
+      const beforeData = currentPlan.commitments
       const updatedPlan = { ...currentPlan, commitments }
       setCurrentPlan(updatedPlan)
-      // Auto-save will be triggered by useAutosave hook
+      await trackChange('update', { ...currentPlan, commitments: beforeData })
     }
   }
 
-  const handleUpdateEvents = (events: Event[]) => {
+  const handleUpdateEvents = async (events: Event[]) => {
     if (currentPlan) {
+      const beforeData = currentPlan.events
       const updatedPlan = { ...currentPlan, events }
       setCurrentPlan(updatedPlan)
-      // Auto-save will be triggered by useAutosave hook
+      await trackChange('update', { ...currentPlan, events: beforeData })
+    }
+  }
+
+  const handleUpdateScenarios = async (scenarios: Scenario[]) => {
+    if (currentPlan) {
+      const beforeData = currentPlan.scenarios
+      const updatedPlan = { ...currentPlan, scenarios }
+      setCurrentPlan(updatedPlan)
+      await trackChange('update', { ...currentPlan, scenarios: beforeData })
+    }
+  }
+
+  const handleTimelineRevert = async (version: number) => {
+    // Reload the plan after revert
+    if (planId) {
+      try {
+        const { loadPlan } = await import('./services/storage')
+        const revertedPlan = await loadPlan(planId)
+        if (revertedPlan) {
+          setCurrentPlan(revertedPlan)
+        }
+      } catch (error) {
+        console.error('Failed to reload plan after revert:', error)
+      }
     }
   }
 
@@ -407,6 +435,21 @@ function App() {
             activeScenario={activeScenario}
           />
         )
+      case 'timeline':
+        return planId ? (
+          <TimelineViewer 
+            planId={planId} 
+            onRevert={handleTimelineRevert}
+          />
+        ) : (
+          <div className="text-center py-12">
+            <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+              <History className="w-12 h-12 text-muted-foreground" />
+            </div>
+            <h2 className="text-2xl font-bold mb-4">Timeline</h2>
+            <p className="text-muted-foreground">No plan loaded</p>
+          </div>
+        )
       case 'settings':
         return (
           <div className="space-y-6">
@@ -491,5 +534,3 @@ function App() {
     </div>
   )
 }
-
-export default App
