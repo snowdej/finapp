@@ -1,4 +1,4 @@
-import { Person, ValidationError, ValidationResult, Sex, Asset, Loan, Income, Commitment, Event, PlanAssumptions, AssumptionOverride } from '../types'
+import { Person, ValidationError, ValidationResult, Sex, Asset, Loan, Income, Commitment, Event, PlanAssumptions, AssumptionOverride, Scenario } from '../types'
 
 function isValidName(name: string): boolean {
   return !!(name && name.trim().length > 0)

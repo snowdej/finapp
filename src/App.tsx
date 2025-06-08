@@ -24,6 +24,7 @@ import { CommitmentManager } from './components/commitments/CommitmentManager'
 import { EventManager } from './components/events/EventManager'
 import { AssumptionsManager } from './components/assumptions/AssumptionsManager'
 import { getDefaultAssumptions } from './utils/assumptions'
+import { generateId } from './utils/validation'
 import { Person, Asset, Income, Commitment, Event, PlanAssumptions, AssumptionOverride, Scenario } from './types'
 import { ScenarioManager } from './components/scenarios/ScenarioManager'
 
