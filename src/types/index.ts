@@ -9,7 +9,6 @@ export interface Person {
   name: string
   dateOfBirth: string
   sex: Sex
-  isChild?: boolean // Optional computed property
 }
 
 // Validation types
@@ -23,16 +22,88 @@ export interface ValidationResult {
   errors: ValidationError[]
 }
 
+// Asset types
 export interface Asset {
   id: string
   name: string
-  type: string
+  type: 'ISA' | 'SIPP' | 'Property' | 'Stocks' | 'Bonds' | 'Cash' | 'Other'
   currentValue: number
   ownerIds: string[]
+  growthRate?: number
+  inflationRate?: number
+  loans?: Loan[]
+  manualOverrides?: AssetOverride[]
   createdAt?: string
   updatedAt?: string
 }
 
+// Loan types
+export interface Loan {
+  id: string
+  name: string
+  amount: number
+  interestRate: number
+  termYears: number
+  startDate: string
+  monthlyPayment?: number
+  remainingBalance?: number
+}
+
+// Asset override types
+export interface AssetOverride {
+  id: string
+  year: number
+  value: number
+  note?: string
+}
+
+// Income types
+export interface Income {
+  id: string
+  name: string
+  amount: number
+  frequency: 'weekly' | 'monthly' | 'quarterly' | 'annually'
+  startYear: number
+  endYear?: number
+  ownerIds: string[]
+  destination?: 'cash' | 'asset' | 'external'
+  destinationAssetId?: string
+  growthRate?: number
+  inflationRate?: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+// Commitment types
+export interface Commitment {
+  id: string
+  name: string
+  amount: number
+  frequency: 'weekly' | 'monthly' | 'quarterly' | 'annually'
+  startYear: number
+  endYear?: number
+  ownerIds: string[]
+  source?: 'cash' | 'asset' | 'external'
+  sourceAssetId?: string
+  growthRate?: number
+  inflationRate?: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+// Event types
+export interface Event {
+  id: string
+  name: string
+  year: number
+  amount: number
+  type: 'income' | 'expense' | 'asset-change'
+  assetId?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+// Plan types
 export interface FinancialPlan {
   id: string
   name: string
@@ -45,58 +116,7 @@ export interface FinancialPlan {
   updatedAt?: string
 }
 
-export interface Loan {
-  id: string
-  name: string
-  amount: number
-  interestRate: number
-  termYears: number
-  startYear: number
-  monthlyPayment?: number
-}
-
-export interface Income {
-  id: string
-  name: string
-  amount: number
-  frequency: 'weekly' | 'monthly' | 'quarterly' | 'annually'
-  startYear: number
-  endYear?: number
-  ownerIds: string[]
-  createdAt?: string
-  updatedAt?: string
-}
-
-export interface Commitment {
-  id: string
-  name: string
-  amount: number
-  frequency: 'weekly' | 'monthly' | 'quarterly' | 'annually'
-  startYear: number
-  endYear?: number
-  ownerIds: string[]
-  createdAt?: string
-  updatedAt?: string
-}
-
-export interface Event {
-  id: string
-  name: string
-  year: number
-  amount: number
-  type: 'income' | 'expense' | 'asset-change'
-  assetId?: string
-  createdAt?: string
-  updatedAt?: string
-}
-
-export interface ManualOverride {
-  id: string
-  year: number
-  value: number
-  description?: string
-}
-
+// Scenario types
 export interface Scenario {
   id: string
   planId: string
@@ -107,6 +127,7 @@ export interface Scenario {
   updatedAt?: string
 }
 
+// Assumptions types
 export interface Assumptions {
   inflationRate: number
   incomeGrowthRate: number
@@ -114,6 +135,7 @@ export interface Assumptions {
   taxRates?: Record<string, number>
 }
 
+// Change log types
 export interface ChangeLog {
   id: string
   planId: string
@@ -123,3 +145,4 @@ export interface ChangeLog {
   description: string
   data: any
 }
+

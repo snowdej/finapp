@@ -18,7 +18,10 @@ import { ImportExportDialog } from './components/ui/ImportExportDialog'
 import { loadAllPlans, savePlan } from './services/storage'
 import { useAutosave } from './hooks/useAutosave'
 import { PeopleManager } from './components/people/PeopleManager'
-import { Person } from './types'
+import { AssetManager } from './components/assets/AssetManager'
+import { IncomeManager } from './components/income/IncomeManager'
+import { CommitmentManager } from './components/commitments/CommitmentManager'
+import { Person, Asset, Income, Commitment } from './types'
 
 type TabId = 'dashboard' | 'people' | 'assets' | 'income' | 'commitments' | 'events' | 'scenarios' | 'settings'
 
@@ -110,6 +113,30 @@ function App() {
   const handleUpdatePeople = (people: Person[]) => {
     if (currentPlan) {
       const updatedPlan = { ...currentPlan, people }
+      setCurrentPlan(updatedPlan)
+      // Auto-save will be triggered by useAutosave hook
+    }
+  }
+
+  const handleUpdateAssets = (assets: Asset[]) => {
+    if (currentPlan) {
+      const updatedPlan = { ...currentPlan, assets }
+      setCurrentPlan(updatedPlan)
+      // Auto-save will be triggered by useAutosave hook
+    }
+  }
+
+  const handleUpdateIncome = (income: Income[]) => {
+    if (currentPlan) {
+      const updatedPlan = { ...currentPlan, income }
+      setCurrentPlan(updatedPlan)
+      // Auto-save will be triggered by useAutosave hook
+    }
+  }
+
+  const handleUpdateCommitments = (commitments: Commitment[]) => {
+    if (currentPlan) {
+      const updatedPlan = { ...currentPlan, commitments }
       setCurrentPlan(updatedPlan)
       // Auto-save will be triggered by useAutosave hook
     }
@@ -255,6 +282,32 @@ function App() {
           <PeopleManager
             people={currentPlan?.people || []}
             onUpdatePeople={handleUpdatePeople}
+          />
+        )
+      case 'assets':
+        return (
+          <AssetManager
+            assets={currentPlan?.assets || []}
+            people={currentPlan?.people || []}
+            onUpdateAssets={handleUpdateAssets}
+          />
+        )
+      case 'income':
+        return (
+          <IncomeManager
+            income={currentPlan?.income || []}
+            people={currentPlan?.people || []}
+            assets={currentPlan?.assets || []}
+            onUpdateIncome={handleUpdateIncome}
+          />
+        )
+      case 'commitments':
+        return (
+          <CommitmentManager
+            commitments={currentPlan?.commitments || []}
+            people={currentPlan?.people || []}
+            assets={currentPlan?.assets || []}
+            onUpdateCommitments={handleUpdateCommitments}
           />
         )
       case 'settings':

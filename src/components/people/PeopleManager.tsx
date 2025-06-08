@@ -85,7 +85,6 @@ export function PeopleManager({ people, onUpdatePeople }: PeopleManagerProps) {
           onClick={() => setIsAdding(true)}
           disabled={isAdding || editingId !== null}
           className="flex items-center gap-2"
-          data-testid="main-add-person-button"
         >
           <Plus className="h-4 w-4" />
           Add Person
@@ -111,7 +110,7 @@ export function PeopleManager({ people, onUpdatePeople }: PeopleManagerProps) {
         </Card>
       )}
 
-      {/* People List */}
+      {/* People List or Empty State */}
       {people.length === 0 && !isAdding ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -120,15 +119,12 @@ export function PeopleManager({ people, onUpdatePeople }: PeopleManagerProps) {
             <p className="text-muted-foreground text-center mb-4">
               Start by adding the people who are part of your financial plan
             </p>
-            <Button 
-              onClick={() => setIsAdding(true)}
-              data-testid="empty-state-add-person-button"
-            >
+            <Button onClick={() => setIsAdding(true)} data-testid="add-first-person">
               Add Your First Person
             </Button>
           </CardContent>
         </Card>
-      ) : (
+      ) : people.length > 0 && !isAdding ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {people.map((person) => (
             <PersonCard
@@ -144,7 +140,7 @@ export function PeopleManager({ people, onUpdatePeople }: PeopleManagerProps) {
             />
           ))}
         </div>
-      )}
+      ) : null}
 
       {/* Summary */}
       {people.length > 0 && (
@@ -154,23 +150,23 @@ export function PeopleManager({ people, onUpdatePeople }: PeopleManagerProps) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div data-testid="summary-total">
+              <div>
                 <div className="text-2xl font-bold">{people.length}</div>
                 <div className="text-sm text-muted-foreground">Total People</div>
               </div>
-              <div data-testid="summary-male">
+              <div>
                 <div className="text-2xl font-bold">
                   {people.filter(p => p.sex === Sex.M).length}
                 </div>
                 <div className="text-sm text-muted-foreground">Male</div>
               </div>
-              <div data-testid="summary-female">
+              <div>
                 <div className="text-2xl font-bold">
                   {people.filter(p => p.sex === Sex.F).length}
                 </div>
                 <div className="text-sm text-muted-foreground">Female</div>
               </div>
-              <div data-testid="summary-avg-age">
+              <div>
                 <div className="text-2xl font-bold">
                   {people.length > 0 
                     ? Math.round(people.reduce((sum, p) => sum + calculateAge(p.dateOfBirth), 0) / people.length)

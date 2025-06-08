@@ -38,7 +38,7 @@
 * Auto-name if blank
 * Validate DOB, sex
 
-### 6. Assets & Loans Management - [ ]
+### 6. Assets & Loans Management - [x]
 
 * List/add/edit/delete assets (ISAs, SIPPs, Property, etc.)
 * Assign one/many/all owners (equal split)
@@ -103,7 +103,7 @@
 
 ## Chunked, Iterative Steps and LLM Code-Gen Prompts
 
-### \[Step 1] — **Project Bootstrap** - [ ]
+### \[Step 1] — **Project Bootstrap** - [x]
 
 ```text
 Create a new Vite (or Create React App) project with React and TypeScript. Add Tailwind CSS, shadcn/ui (or Material UI), Recharts, React-Table, and the idb library for IndexedDB support. Scaffold the src directory structure for components, types, utils, and features.
@@ -113,7 +113,7 @@ Write Jest or Vitest as the test runner. Confirm the app loads and the dependenc
 
 ---
 
-### \[Step 2] — **TypeScript Data Models and Utilities** - [ ]
+### \[Step 2] — **TypeScript Data Models and Utilities** - [x]
 
 ```text
 Define TypeScript interfaces for Person, Asset, Loan, FinancialItem, Scenario, ChangeLog, Assumptions, as per spec.md. Write type guards and validation helpers (e.g., isValidDate, isNonNegative, isValidName).
@@ -143,7 +143,7 @@ Implement manual export (as JSON, with metadata: name, date, schema version, GUI
 
 ---
 
-### \[Step 5] — **People CRUD UI** - [ ]
+### \[Step 5] — **People CRUD UI** - [x]
 
 ```text
 Build forms and lists for adding, editing, and removing people (shadcn/ui/Material forms). Validate DOB and sex. Auto-assign unique names if blank.
@@ -153,7 +153,7 @@ Update the dashboard summary to show people count and ages. Write tests for all 
 
 ---
 
-### \[Step 6] — **Assets and Loans CRUD UI** - [ ]
+### \[Step 6] — **Assets and Loans CRUD UI** - [x]
 
 ```text
 Implement forms/lists for assets (ISA, SIPP, property, etc.), with assignment to one/many/all owners. For properties/assets, add UI to attach multiple loans, each with terms.

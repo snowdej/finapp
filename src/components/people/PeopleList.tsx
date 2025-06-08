@@ -3,7 +3,7 @@ import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Edit, Trash2, Users, Calendar, UserCheck, UserX } from 'lucide-react'
 import { Person } from '../../types'
-import { calculateAge, formatDate } from '../../utils'
+import { calculateAge, formatDate, isChild } from '../../utils'
 
 interface PeopleListProps {
   people: Person[]
@@ -59,6 +59,7 @@ export function PeopleList({ people, onEdit, onDelete }: PeopleListProps) {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {people.map((person) => {
           const age = calculateAge(person.dateOfBirth)
+          const personIsChild = isChild(person.dateOfBirth)
           const isDeleting = deleteConfirm === person.id
 
           return (
@@ -66,7 +67,7 @@ export function PeopleList({ people, onEdit, onDelete }: PeopleListProps) {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
-                    {person.isChild ? (
+                    {personIsChild ? (
                       <UserX className="h-4 w-4 text-orange-500" />
                     ) : (
                       <UserCheck className="h-4 w-4 text-green-500" />
@@ -112,8 +113,8 @@ export function PeopleList({ people, onEdit, onDelete }: PeopleListProps) {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Status:</span>
-                    <span className={`font-medium ${person.isChild ? 'text-orange-600' : 'text-green-600'}`}>
-                      {person.isChild ? 'Child' : 'Adult'}
+                    <span className={`font-medium ${personIsChild ? 'text-orange-600' : 'text-green-600'}`}>
+                      {personIsChild ? 'Child' : 'Adult'}
                     </span>
                   </div>
                 </div>

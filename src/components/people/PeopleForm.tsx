@@ -3,7 +3,6 @@ import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { AlertCircle, Save, X } from 'lucide-react'
 import { Person, Sex, ValidationResult } from '../../types'
-// import { validatePerson } from '../../utils/validation'
 import { generateDefaultName } from '../../utils'
 
 interface PeopleFormProps {
@@ -18,8 +17,7 @@ export function PeopleForm({ person, existingNames, onSave, onCancel }: PeopleFo
     id: person?.id || '',
     name: person?.name || '',
     dateOfBirth: person?.dateOfBirth || '',
-    sex: person?.sex || Sex.M,
-    isChild: person?.isChild || false
+    sex: person?.sex || Sex.M
   })
   
   const [validation, setValidation] = useState<ValidationResult>({ isValid: true, errors: [] })
@@ -67,21 +65,11 @@ export function PeopleForm({ person, existingNames, onSave, onCancel }: PeopleFo
         finalName = generateDefaultName('Person', existingNames)
       }
 
-      // Calculate if person is a child (under 18)
-      const birthDate = new Date(formData.dateOfBirth!)
-      const today = new Date()
-      const age = today.getFullYear() - birthDate.getFullYear()
-      const monthDiff = today.getMonth() - birthDate.getMonth()
-      const adjustedAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) 
-        ? age - 1 
-        : age
-
       const personData: Person = {
         id: formData.id || `person-${Date.now()}`,
         name: finalName,
         dateOfBirth: formData.dateOfBirth!,
-        sex: formData.sex!,
-        isChild: adjustedAge < 18
+        sex: formData.sex!
       }
 
       onSave(personData)
@@ -219,3 +207,4 @@ export function PeopleForm({ person, existingNames, onSave, onCancel }: PeopleFo
     </Card>
   )
 }
+

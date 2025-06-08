@@ -1,4 +1,4 @@
-import { Person, ValidationError, ValidationResult, Sex, Asset } from '../types'
+import { Person, ValidationError, ValidationResult, Sex, Asset, Loan, Income, Commitment } from '../types'
 
 function isValidName(name: string): boolean {
   return !!(name && name.trim().length > 0)
@@ -101,13 +101,13 @@ export function deepClone<T>(obj: T): T {
 export function validateAsset(asset: Partial<Asset>, people: Person[]): ValidationResult {
   const errors: ValidationError[] = []
 
-  // Name validation (required)
-  if (!asset.name || !asset.name.trim()) {
-    errors.push({ field: 'name', message: 'Asset name is required' })
+  // Name validation (optional since we auto-generate)
+  if (asset.name && !isValidName(asset.name)) {
+    errors.push({ field: 'name', message: 'Name cannot be empty or just whitespace' })
   }
 
   // Type validation (required)
-  if (!asset.type || !asset.type.trim()) {
+  if (!asset.type) {
     errors.push({ field: 'type', message: 'Asset type is required' })
   }
 
@@ -130,12 +130,172 @@ export function validateAsset(asset: Partial<Asset>, people: Person[]): Validati
   }
 
   // Growth rate validation (optional, but if provided should be reasonable)
-  if ('growthRate' in asset && asset.growthRate !== undefined && asset.growthRate !== null && (typeof asset.growthRate === 'number') && (asset.growthRate < -100 || asset.growthRate > 100)) {
+  if (asset.growthRate !== undefined && (asset.growthRate < -100 || asset.growthRate > 100)) {
     errors.push({ field: 'growthRate', message: 'Growth rate should be between -100% and 100%' })
   }
 
   // Inflation rate validation (optional, but if provided should be reasonable)
-  if ('inflationRate' in asset && asset.inflationRate !== undefined && asset.inflationRate !== null && (typeof asset.inflationRate === 'number') && (asset.inflationRate < -50 || asset.inflationRate > 50)) {
+  if (asset.inflationRate !== undefined && (asset.inflationRate < -50 || asset.inflationRate > 50)) {
+    errors.push({ field: 'inflationRate', message: 'Inflation rate should be between -50% and 50%' })
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}
+
+export function validateLoan(loan: Partial<Loan>): ValidationResult {
+  const errors: ValidationError[] = []
+
+  // Name validation (required)
+  if (!loan.name || !loan.name.trim()) {
+    errors.push({ field: 'name', message: 'Loan name is required' })
+  }
+
+  // Amount validation (required, positive)
+  if (!loan.amount || loan.amount <= 0) {
+    errors.push({ field: 'amount', message: 'Loan amount must be greater than 0' })
+  }
+
+  // Interest rate validation (required, non-negative)
+  if (loan.interestRate === undefined || loan.interestRate === null || loan.interestRate < 0) {
+    errors.push({ field: 'interestRate', message: 'Interest rate must be 0 or greater' })
+  }
+
+  // Term validation (required, positive integer)
+  if (!loan.termYears || loan.termYears <= 0 || !Number.isInteger(loan.termYears)) {
+    errors.push({ field: 'termYears', message: 'Term must be a positive number of years' })
+  }
+
+  // Start date validation (required)
+  if (!loan.startDate) {
+    errors.push({ field: 'startDate', message: 'Start date is required' })
+  } else if (!isValidDate(loan.startDate)) {
+    errors.push({ field: 'startDate', message: 'Valid start date is required' })
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}
+
+export function validateIncome(income: Partial<Income>, people: Person[], assets: Asset[]): ValidationResult {
+  const errors: ValidationError[] = []
+
+  // Name validation (required)
+  if (!income.name || !income.name.trim()) {
+    errors.push({ field: 'name', message: 'Income name is required' })
+  }
+
+  // Amount validation (required, positive)
+  if (!income.amount || income.amount <= 0) {
+    errors.push({ field: 'amount', message: 'Income amount must be greater than 0' })
+  }
+
+  // Frequency validation (required)
+  if (!income.frequency) {
+    errors.push({ field: 'frequency', message: 'Frequency is required' })
+  }
+
+  // Start year validation (required, reasonable)
+  if (!income.startYear) {
+    errors.push({ field: 'startYear', message: 'Start year is required' })
+  } else if (income.startYear < 1900 || income.startYear > 2100) {
+    errors.push({ field: 'startYear', message: 'Start year should be between 1900 and 2100' })
+  }
+
+  // End year validation (optional, but if provided should be after start year)
+  if (income.endYear && income.startYear && income.endYear <= income.startYear) {
+    errors.push({ field: 'endYear', message: 'End year must be after start year' })
+  }
+
+  // Owners validation (at least one required)
+  if (!income.ownerIds || income.ownerIds.length === 0) {
+    errors.push({ field: 'ownerIds', message: 'At least one owner is required' })
+  } else {
+    const invalidOwners = income.ownerIds.filter(id => !people.find(p => p.id === id))
+    if (invalidOwners.length > 0) {
+      errors.push({ field: 'ownerIds', message: 'One or more selected owners do not exist' })
+    }
+  }
+
+  // Destination asset validation
+  if (income.destination === 'asset' && income.destinationAssetId) {
+    if (!assets.find(a => a.id === income.destinationAssetId)) {
+      errors.push({ field: 'destinationAssetId', message: 'Selected destination asset does not exist' })
+    }
+  }
+
+  // Growth and inflation rate validation
+  if (income.growthRate !== undefined && (income.growthRate < -100 || income.growthRate > 100)) {
+    errors.push({ field: 'growthRate', message: 'Growth rate should be between -100% and 100%' })
+  }
+
+  if (income.inflationRate !== undefined && (income.inflationRate < -50 || income.inflationRate > 50)) {
+    errors.push({ field: 'inflationRate', message: 'Inflation rate should be between -50% and 50%' })
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}
+
+export function validateCommitment(commitment: Partial<Commitment>, people: Person[], assets: Asset[]): ValidationResult {
+  const errors: ValidationError[] = []
+
+  // Name validation (required)
+  if (!commitment.name || !commitment.name.trim()) {
+    errors.push({ field: 'name', message: 'Commitment name is required' })
+  }
+
+  // Amount validation (required, positive)
+  if (!commitment.amount || commitment.amount <= 0) {
+    errors.push({ field: 'amount', message: 'Commitment amount must be greater than 0' })
+  }
+
+  // Frequency validation (required)
+  if (!commitment.frequency) {
+    errors.push({ field: 'frequency', message: 'Frequency is required' })
+  }
+
+  // Start year validation (required, reasonable)
+  if (!commitment.startYear) {
+    errors.push({ field: 'startYear', message: 'Start year is required' })
+  } else if (commitment.startYear < 1900 || commitment.startYear > 2100) {
+    errors.push({ field: 'startYear', message: 'Start year should be between 1900 and 2100' })
+  }
+
+  // End year validation (optional, but if provided should be after start year)
+  if (commitment.endYear && commitment.startYear && commitment.endYear <= commitment.startYear) {
+    errors.push({ field: 'endYear', message: 'End year must be after start year' })
+  }
+
+  // Owners validation (at least one required)
+  if (!commitment.ownerIds || commitment.ownerIds.length === 0) {
+    errors.push({ field: 'ownerIds', message: 'At least one owner is required' })
+  } else {
+    const invalidOwners = commitment.ownerIds.filter(id => !people.find(p => p.id === id))
+    if (invalidOwners.length > 0) {
+      errors.push({ field: 'ownerIds', message: 'One or more selected owners do not exist' })
+    }
+  }
+
+  // Source asset validation
+  if (commitment.source === 'asset' && commitment.sourceAssetId) {
+    if (!assets.find(a => a.id === commitment.sourceAssetId)) {
+      errors.push({ field: 'sourceAssetId', message: 'Selected source asset does not exist' })
+    }
+  }
+
+  // Growth and inflation rate validation
+  if (commitment.growthRate !== undefined && (commitment.growthRate < -100 || commitment.growthRate > 100)) {
+    errors.push({ field: 'growthRate', message: 'Growth rate should be between -100% and 100%' })
+  }
+
+  if (commitment.inflationRate !== undefined && (commitment.inflationRate < -50 || commitment.inflationRate > 50)) {
     errors.push({ field: 'inflationRate', message: 'Inflation rate should be between -50% and 50%' })
   }
 

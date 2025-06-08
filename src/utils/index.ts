@@ -70,8 +70,10 @@ export function formatDate(date: Date | string): string {
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',
-    currency: 'GBP'
-  }).format(amount);
+    currency: 'GBP',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount)
 }
 
 /**
@@ -126,4 +128,11 @@ export function generateDefaultName(prefix: string, existingNames: string[]): st
   
   const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1
   return `${prefix} ${nextNumber}`
+}
+
+/**
+ * Percentage formatting utility
+ */
+export function formatPercentage(value: number): string {
+  return `${value.toFixed(1)}%`
 }

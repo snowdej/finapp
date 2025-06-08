@@ -43,7 +43,7 @@ describe('PeopleManager', () => {
   it('allows adding a new person', async () => {
     render(<PeopleManager people={[]} onUpdatePeople={mockOnUpdatePeople} />)
     
-    fireEvent.click(screen.getByTestId('empty-state-add-person-button'))
+    fireEvent.click(screen.getByRole('button', { name: 'Add Person' }))
     
     // Fill in the form
     fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'New Person' } })
@@ -63,24 +63,38 @@ describe('PeopleManager', () => {
     })
   })
 
-  it('validates required fields', async () => {
-    render(<PeopleManager people={[]} onUpdatePeople={mockOnUpdatePeople} />)
+  it('allows adding person from main button when people exist', async () => {
+    render(<PeopleManager people={mockPeople} onUpdatePeople={mockOnUpdatePeople} />)
     
-    fireEvent.click(screen.getByTestId('empty-state-add-person-button'))
+    // Should show the header Add Person button, not the "Add Your First Person" button
+    expect(screen.queryByTestId('add-first-person')).not.toBeInTheDocument()
+    
+    // Click the header Add Person button
+    fireEvent.click(screen.getByRole('button', { name: 'Add Person' }))
+    
+    // Fill in the form
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Third Person' } })
+    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: '1995-01-01' } })
+    fireEvent.change(screen.getByLabelText(/sex/i), { target: { value: 'F' } })
+    
     fireEvent.click(screen.getByRole('button', { name: 'Add Person' }))
     
     await waitFor(() => {
-      expect(screen.getByText(/date of birth is required/i)).toBeInTheDocument()
-      expect(screen.getByText(/sex is required/i)).toBeInTheDocument()
+      expect(mockOnUpdatePeople).toHaveBeenCalledWith([
+        ...mockPeople,
+        expect.objectContaining({
+          name: 'Third Person',
+          dateOfBirth: '1995-01-01',
+          sex: Sex.F
+        })
+      ])
     })
-    
-    expect(mockOnUpdatePeople).not.toHaveBeenCalled()
   })
 
   it('auto-generates name if blank', async () => {
     render(<PeopleManager people={[]} onUpdatePeople={mockOnUpdatePeople} />)
     
-    fireEvent.click(screen.getByTestId('empty-state-add-person-button'))
+    fireEvent.click(screen.getByRole('button', { name: 'Add Person' }))
     
     // Fill required fields but leave name blank
     fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: '1990-01-01' } })
@@ -97,6 +111,20 @@ describe('PeopleManager', () => {
         })
       ])
     })
+  })
+
+  it('validates required fields', async () => {
+    render(<PeopleManager people={[]} onUpdatePeople={mockOnUpdatePeople} />)
+    
+    fireEvent.click(screen.getByTestId('empty-state-add-person-button'))
+    fireEvent.click(screen.getByRole('button', { name: 'Add Person' }))
+    
+    await waitFor(() => {
+      expect(screen.getByText(/date of birth is required/i)).toBeInTheDocument()
+      expect(screen.getByText(/sex is required/i)).toBeInTheDocument()
+    })
+    
+    expect(mockOnUpdatePeople).not.toHaveBeenCalled()
   })
 
   it('allows editing an existing person', async () => {
