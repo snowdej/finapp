@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PlanAssumptions, ValidationError, AssetType } from '../../types'
+import { PlanAssumptions, ValidationError } from '../../types'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
@@ -29,7 +29,7 @@ export function PlanAssumptionsForm({ assumptions, onSubmit }: PlanAssumptionsFo
     setHasChanges(true)
   }
 
-  const handleAssetGrowthChange = (assetType: AssetType, value: number) => {
+  const handleAssetGrowthChange = (assetType: string, value: number) => {
     setFormData(prev => ({
       ...prev,
       assetGrowthRates: {
@@ -39,7 +39,7 @@ export function PlanAssumptionsForm({ assumptions, onSubmit }: PlanAssumptionsFo
     }))
   }
 
-  const handleTaxRateChange = (taxType: keyof PlanAssumptions['taxRates'], value: number) => {
+  const handleTaxRateChange = (taxType: keyof NonNullable<PlanAssumptions['taxRates']>, value: number) => {
     setFormData(prev => ({
       ...prev,
       taxRates: {
@@ -154,7 +154,7 @@ export function PlanAssumptionsForm({ assumptions, onSubmit }: PlanAssumptionsFo
                 type="number"
                 step="0.1"
                 value={rate as number}
-                onChange={(e) => handleAssetGrowthChange(assetType as AssetType, parseFloat(e.target.value) || 0)}
+                onChange={(e) => handleAssetGrowthChange(assetType, parseFloat(e.target.value) || 0)}
               />
               {getFieldError(`assetGrowthRates.${assetType}`) && (
                 <p className="text-sm text-destructive">{getFieldError(`assetGrowthRates.${assetType}`)}</p>
@@ -176,7 +176,7 @@ export function PlanAssumptionsForm({ assumptions, onSubmit }: PlanAssumptionsFo
               id="incomeTax"
               type="number"
               step="0.1"
-              value={formData.taxRates.income || ''}
+              value={formData.taxRates?.income || ''}
               onChange={(e) => handleTaxRateChange('income', parseFloat(e.target.value) || 0)}
             />
             {getFieldError('taxRates.income') && (
@@ -190,7 +190,7 @@ export function PlanAssumptionsForm({ assumptions, onSubmit }: PlanAssumptionsFo
               id="capitalGainsTax"
               type="number"
               step="0.1"
-              value={formData.taxRates.capitalGains || ''}
+              value={formData.taxRates?.capitalGains || ''}
               onChange={(e) => handleTaxRateChange('capitalGains', parseFloat(e.target.value) || 0)}
             />
             {getFieldError('taxRates.capitalGains') && (
@@ -204,7 +204,7 @@ export function PlanAssumptionsForm({ assumptions, onSubmit }: PlanAssumptionsFo
               id="inheritanceTax"
               type="number"
               step="0.1"
-              value={formData.taxRates.inheritanceTax || ''}
+              value={formData.taxRates?.inheritanceTax || ''}
               onChange={(e) => handleTaxRateChange('inheritanceTax', parseFloat(e.target.value) || 0)}
             />
             {getFieldError('taxRates.inheritanceTax') && (

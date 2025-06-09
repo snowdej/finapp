@@ -156,7 +156,7 @@ export function ScenarioForm({
               type="number"
               step="0.1"
               value={formData.assumptions?.assetGrowthRates?.ISA || ''}
-              onChange={(e) => handleAssetGrowthChange(AssetType.ISA, parseFloat(e.target.value) || 0)}
+              onChange={(e) => handleAssetGrowthChange('ISA' as AssetType, parseFloat(e.target.value) || 0)}
             />
           </div>
 
@@ -167,7 +167,7 @@ export function ScenarioForm({
               type="number"
               step="0.1"
               value={formData.assumptions?.assetGrowthRates?.SIPP || ''}
-              onChange={(e) => handleAssetGrowthChange(AssetType.SIPP, parseFloat(e.target.value) || 0)}
+              onChange={(e) => handleAssetGrowthChange('SIPP' as AssetType, parseFloat(e.target.value) || 0)}
             />
           </div>
         </div>

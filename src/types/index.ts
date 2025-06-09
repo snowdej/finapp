@@ -1,17 +1,25 @@
-// Core person types
+// Core types for the financial planning application
+
 export enum Sex {
   M = 'M',
   F = 'F'
 }
 
-export interface ValidationError {
-  field: string
-  message: string
+export enum AssetType {
+  ISA = 'ISA',
+  SIPP = 'SIPP',
+  Property = 'Property',
+  Savings = 'Savings',
+  Investment = 'Investment',
+  Pension = 'Pension',
+  Other = 'Other'
 }
 
-export interface ValidationResult {
-  isValid: boolean
-  errors: ValidationError[]
+export enum Frequency {
+  Weekly = 'weekly',
+  Monthly = 'monthly',
+  Quarterly = 'quarterly',
+  Annually = 'annually'
 }
 
 export interface Person {
@@ -25,15 +33,14 @@ export interface Person {
 
 export interface Loan {
   id: string
-  assetId: string
   name: string
   amount: number
   interestRate: number
   termYears: number
   startDate: string
   monthlyPayment?: number
+  remainingBalance?: number
   createdAt: string
-  updatedAt?: string
 }
 
 export interface AssetOverride {
@@ -41,18 +48,17 @@ export interface AssetOverride {
   assetId: string
   year: number
   value: number
-  reason?: string
   createdAt: string
 }
 
 export interface Asset {
   id: string
   name: string
-  type: 'ISA' | 'SIPP' | 'Property' | 'Cash' | 'Investment' | 'Other'
+  type: AssetType
   currentValue: number
   ownerIds: string[]
-  loans?: Loan[]
-  overrides?: AssetOverride[]
+  loans: Loan[]
+  overrides: AssetOverride[]
   growthRate?: number
   inflationRate?: number
   createdAt: string
@@ -63,7 +69,7 @@ export interface Income {
   id: string
   name: string
   amount: number
-  frequency: 'weekly' | 'monthly' | 'quarterly' | 'annually'
+  frequency: Frequency
   startYear: number
   endYear?: number
   ownerIds: string[]
@@ -79,7 +85,7 @@ export interface Commitment {
   id: string
   name: string
   amount: number
-  frequency: 'weekly' | 'monthly' | 'quarterly' | 'annually'
+  frequency: Frequency
   startYear: number
   endYear?: number
   ownerIds: string[]
@@ -96,21 +102,14 @@ export interface Event {
   name: string
   year: number
   amount: number
-  type: 'income' | 'expense' | 'transfer' | 'inheritance' | 'other'
+  type: 'income' | 'expense' | 'asset_change'
   description?: string
-  isRecurring?: boolean
-  recurringFrequency?: 'annually' | 'monthly' | 'quarterly'
-  recurringEndYear?: number
   affectedPersonIds?: string[]
   linkedAssetId?: string
+  isRecurring?: boolean
+  recurringEndYear?: number
   createdAt: string
   updatedAt?: string
-}
-
-export interface TaxRates {
-  income?: number
-  capitalGains?: number
-  inheritanceTax?: number
 }
 
 export interface PlanAssumptions {
@@ -120,19 +119,22 @@ export interface PlanAssumptions {
   retirementAge: number
   lifeExpectancy: number
   assetGrowthRates: Record<string, number>
-  taxRates?: TaxRates
+  taxRates?: {
+    income?: number
+    capitalGains?: number
+    inheritanceTax?: number
+  }
 }
 
 export interface AssumptionOverride {
   id: string
-  entityType: 'person' | 'asset' | 'income' | 'commitment' | 'category'
+  entityType: 'asset' | 'income' | 'commitment' | 'category'
   entityId?: string
   categoryType?: string
   overrideType: 'inflation' | 'growth' | 'interest' | 'tax'
   value: number
   startYear?: number
   endYear?: number
-  description?: string
   createdAt: string
 }
 
@@ -164,6 +166,16 @@ export interface FinancialPlan {
   updatedAt?: string
 }
 
+export interface ValidationError {
+  field: string
+  message: string
+}
+
+export interface ValidationResult {
+  isValid: boolean
+  errors: ValidationError[]
+}
+
 export interface ChangeLogEntry {
   id: string
   planId: string
@@ -186,7 +198,21 @@ export interface ChangeTimelineState {
 
 export interface RevertOptions {
   createBackup?: boolean
-  skipValidation?: boolean
+  preserveScenarios?: boolean
+}
+  beforeSnapshot?: any
+  afterSnapshot?: any
+  version: number
+}
+
+export interface ChangeTimelineState {
+  currentVersion: number
+  entries: ChangeLogEntry[]
+}
+
+export interface RevertOptions {
+  createBackup?: boolean
+  preserveScenarios?: boolean
 }
 
 export interface ProjectionSnapshot {
@@ -203,11 +229,22 @@ export interface ProjectionSnapshot {
 export interface ProjectionSummary {
   snapshots: ProjectionSnapshot[]
   categoryTotals: Record<string, Record<number, number>>
-  warnings: string[]
+  projectionYears: number[]
 }
 
-// Utility function exports
-export { calculateAge } from '../utils/validation'
-export { generateId } from '../utils/validation'
-export { deepClone } from '../utils/validation'
+// Export metadata for import/export functionality
+export interface ExportMetadata {
+  version: string
+  planId: string
+  exportDate: string
+  exportedBy?: string
+  description?: string
+}
+
+export interface ExportData {
+  metadata: ExportMetadata
+  plan: FinancialPlan
+  scenarios: Scenario[]
+  timeline?: ChangeTimelineState
+}
 

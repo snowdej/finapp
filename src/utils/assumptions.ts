@@ -18,13 +18,6 @@ export function getDefaultAssumptions(): PlanAssumptions {
       'Crypto': 15.0,
       'Other': 3.0
     },
-    interestRates: {
-      'Mortgage': 4.5,
-      'Personal Loan': 8.0,
-      'Credit Card': 18.0,
-      'Student Loan': 6.0,
-      'Other': 5.0
-    },
     taxRates: {
       income: 20.0,
       capitalGains: 20.0,

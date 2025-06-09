@@ -28,7 +28,6 @@ describe('AssetManager', () => {
       currentValue: 50000,
       ownerIds: ['person-1'],
       loans: [],
-      valueOverrides: [],
       createdAt: '2024-01-01T00:00:00.000Z'
     }
   ]
@@ -123,16 +122,15 @@ describe('AssetManager', () => {
     const multipleAssets = [
       ...mockAssets,
       {
+      {
         id: 'asset-2',
         name: 'SIPP',
         type: AssetType.SIPP,
         currentValue: 100000,
         ownerIds: ['person-1'],
         loans: [],
-        valueOverrides: [],
         createdAt: '2024-01-01T00:00:00.000Z'
       }
-    ]
 
     render(
       <AssetManager 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Asset, Person, ValidationError } from '../../types'
+import { Asset, Person, AssetType, ValidationError } from '../../types'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
@@ -15,11 +15,11 @@ interface AssetFormProps {
 export function AssetForm({ asset, people, onSubmit, onCancel, submitLabel }: AssetFormProps) {
   const [formData, setFormData] = useState<Partial<Asset>>({
     name: asset?.name || '',
-    type: asset?.type || 'ISA',
+    type: asset?.type || undefined,
     currentValue: asset?.currentValue || 0,
     ownerIds: asset?.ownerIds || [],
-    growthRate: asset?.growthRate || 5,
-    inflationRate: asset?.inflationRate || 2.5
+    growthRate: asset?.growthRate,
+    inflationRate: asset?.inflationRate
   })
   const [errors, setErrors] = useState<ValidationError[]>([])
 
@@ -34,31 +34,42 @@ export function AssetForm({ asset, people, onSubmit, onCancel, submitLabel }: As
   }
 
   const handleOwnerChange = (personId: string, checked: boolean) => {
-    const currentOwners = formData.ownerIds || []
     if (checked) {
-      setFormData({ ...formData, ownerIds: [...currentOwners, personId] })
+      setFormData({
+        ...formData,
+        ownerIds: [...(formData.ownerIds || []), personId]
+      })
     } else {
-      setFormData({ ...formData, ownerIds: currentOwners.filter(id => id !== personId) })
+      setFormData({
+        ...formData,
+        ownerIds: (formData.ownerIds || []).filter(id => id !== personId)
+      })
     }
   }
 
-  const handleSelectAllOwners = () => {
-    const allSelected = formData.ownerIds?.length === people.length
-    setFormData({ 
-      ...formData, 
-      ownerIds: allSelected ? [] : people.map(p => p.id) 
+  const selectAllOwners = () => {
+    setFormData({
+      ...formData,
+      ownerIds: people.map(p => p.id)
+    })
+  }
+
+  const clearAllOwners = () => {
+    setFormData({
+      ...formData,
+      ownerIds: []
     })
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Asset Name (optional)</Label>
+        <Label htmlFor="name">Name (optional)</Label>
         <Input
           id="name"
           value={formData.name || ''}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Will be auto-generated based on asset type if left blank"
+          placeholder="Will be auto-generated if left blank"
         />
         {getFieldError('name') && (
           <p className="text-sm text-destructive">{getFieldError('name')}</p>
@@ -70,18 +81,18 @@ export function AssetForm({ asset, people, onSubmit, onCancel, submitLabel }: As
         <select
           id="type"
           value={formData.type || ''}
-          onChange={(e) => setFormData({ ...formData, type: e.target.value as Asset['type'] })}
+          onChange={(e) => setFormData({ ...formData, type: e.target.value as AssetType })}
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          title="Select asset type"
           required
         >
-          <option value="ISA">ISA</option>
-          <option value="SIPP">SIPP</option>
-          <option value="Property">Property</option>
-          <option value="Stocks">Stocks</option>
-          <option value="Bonds">Bonds</option>
-          <option value="Cash">Cash</option>
-          <option value="Other">Other</option>
+          <option value="">Select asset type</option>
+          <option value={AssetType.ISA}>ISA</option>
+          <option value={AssetType.SIPP}>SIPP</option>
+          <option value={AssetType.Property}>Property</option>
+          <option value={AssetType.Savings}>Savings</option>
+          <option value={AssetType.Investment}>Investment</option>
+          <option value={AssetType.Pension}>Pension</option>
+          <option value={AssetType.Other}>Other</option>
         </select>
         {getFieldError('type') && (
           <p className="text-sm text-destructive">{getFieldError('type')}</p>
@@ -107,34 +118,40 @@ export function AssetForm({ asset, people, onSubmit, onCancel, submitLabel }: As
       <div className="space-y-2">
         <Label>Owners *</Label>
         <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="select-all"
-              checked={formData.ownerIds?.length === people.length}
-              onChange={handleSelectAllOwners}
-              className="rounded border-gray-300"
-              title="Select all people as owners"
-            />
-            <Label htmlFor="select-all" className="text-sm font-medium">
-              Select All ({people.length} people)
-            </Label>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={selectAllOwners}
+            >
+              Select All
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={clearAllOwners}
+            >
+              Clear All
+            </Button>
           </div>
-          {people.map((person) => (
-            <div key={person.id} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id={`owner-${person.id}`}
-                checked={formData.ownerIds?.includes(person.id) || false}
-                onChange={(e) => handleOwnerChange(person.id, e.target.checked)}
-                className="rounded border-gray-300"
-                title={`Select ${person.name} as owner`}
-              />
-              <Label htmlFor={`owner-${person.id}`} className="text-sm">
-                {person.name}
-              </Label>
-            </div>
-          ))}
+          <div className="space-y-2 max-h-32 overflow-y-auto border rounded p-2">
+            {people.map((person) => (
+              <div key={person.id} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id={`owner-${person.id}`}
+                  checked={(formData.ownerIds || []).includes(person.id)}
+                  onChange={(e) => handleOwnerChange(person.id, e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor={`owner-${person.id}`} className="text-sm">
+                  {person.name}
+                </label>
+              </div>
+            ))}
+          </div>
         </div>
         {getFieldError('ownerIds') && (
           <p className="text-sm text-destructive">{getFieldError('ownerIds')}</p>
@@ -150,7 +167,7 @@ export function AssetForm({ asset, people, onSubmit, onCancel, submitLabel }: As
             step="0.1"
             value={formData.growthRate || ''}
             onChange={(e) => setFormData({ ...formData, growthRate: parseFloat(e.target.value) || undefined })}
-            placeholder="5.0"
+            placeholder="Leave blank for default"
           />
           {getFieldError('growthRate') && (
             <p className="text-sm text-destructive">{getFieldError('growthRate')}</p>
@@ -165,7 +182,7 @@ export function AssetForm({ asset, people, onSubmit, onCancel, submitLabel }: As
             step="0.1"
             value={formData.inflationRate || ''}
             onChange={(e) => setFormData({ ...formData, inflationRate: parseFloat(e.target.value) || undefined })}
-            placeholder="2.5"
+            placeholder="Leave blank for default"
           />
           {getFieldError('inflationRate') && (
             <p className="text-sm text-destructive">{getFieldError('inflationRate')}</p>
