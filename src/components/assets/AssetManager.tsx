@@ -47,6 +47,7 @@ export function AssetManager({ assets, people, onUpdateAssets }: AssetManagerPro
       growthRate: assetData.growthRate,
       inflationRate: assetData.inflationRate,
       loans: [],
+      overrides: [],
       createdAt: new Date().toISOString()
     }
 

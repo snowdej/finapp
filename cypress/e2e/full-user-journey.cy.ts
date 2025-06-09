@@ -180,7 +180,7 @@ describe('Full User Journey - Financial Planning Tool', () => {
     cy.visit('/')
     
     // Test skip links
-    cy.get('body').tab()
+    cy.get('body').type('{tab}')
     cy.focused().should('contain', 'Skip to main content')
     
     // Navigate to main content

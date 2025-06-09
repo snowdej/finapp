@@ -200,19 +200,10 @@ export interface RevertOptions {
   createBackup?: boolean
   preserveScenarios?: boolean
 }
-  beforeSnapshot?: any
-  afterSnapshot?: any
-  version: number
-}
 
 export interface ChangeTimelineState {
   currentVersion: number
   entries: ChangeLogEntry[]
-}
-
-export interface RevertOptions {
-  createBackup?: boolean
-  preserveScenarios?: boolean
 }
 
 export interface ProjectionSnapshot {

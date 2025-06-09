@@ -81,18 +81,18 @@ describe('Accessibility Tests', () => {
     cy.focused().should('have.attr', 'id', 'name')
     
     // Tab through form
-    cy.focused().tab()
+    cy.get('body').type('{tab}')
     cy.focused().should('have.attr', 'id', 'dateOfBirth')
     
-    cy.focused().tab()
+    cy.get('body').type('{tab}')
     cy.focused().should('have.attr', 'id', 'sex')
     
     // Tab to submit button
-    cy.focused().tab()
+    cy.get('body').type('{tab}')
     cy.focused().should('contain', 'Add Person')
     
     // Tab to cancel button
-    cy.focused().tab()
+    cy.get('body').type('{tab}')
     cy.focused().should('contain', 'Cancel')
     
     // Escape should close form
@@ -128,10 +128,10 @@ describe('Accessibility Tests', () => {
     cy.visit('/')
     
     // Navigate using only keyboard
-    cy.get('body').tab() // Skip link
-    cy.focused().tab()   // Skip link 2
-    cy.focused().tab()   // Theme toggle
-    cy.focused().tab()   // First nav item
+    cy.get('body').type('{tab}') // Skip link
+    cy.get('body').type('{tab}')   // Skip link 2
+    cy.get('body').type('{tab}')   // Theme toggle
+    cy.get('body').type('{tab}')   // First nav item
     
     // Navigate through sidebar using arrow keys and enter
     cy.get('[aria-label="Navigate to People section"]').focus()
@@ -141,7 +141,7 @@ describe('Accessibility Tests', () => {
     cy.get('h2').should('contain', 'People')
     
     // Continue keyboard navigation
-    cy.focused().tab() // Add person button
+    cy.get('body').type('{tab}') // Add person button
     cy.focused().type('{enter}')
     
     // Should open add person form

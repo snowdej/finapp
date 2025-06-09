@@ -53,7 +53,7 @@ export function getEffectiveRate(
   const category = getItemCategory(item)
   const categoryOverride = overrides.find(o => 
     o.entityType === 'category' &&
-    o.category === category &&
+    o.entityId === category &&
     o.overrideType === rateType &&
     (!o.startYear || year >= o.startYear) &&
     (!o.endYear || year <= o.endYear)
@@ -126,7 +126,7 @@ export function getApplicableOverrides(
   
   return overrides.filter(o => 
     (o.entityType === entityType && o.entityId === item.id) ||
-    (o.entityType === 'category' && o.category === category)
+    (o.entityType === 'category' && o.entityId === category)
   ).filter(o =>
     (!o.startYear || year >= o.startYear) &&
     (!o.endYear || year <= o.endYear)
@@ -148,7 +148,7 @@ export function getCurrentRates(
     o.entityType === getEntityType(item) && o.entityId === item.id
   )
   const hasCategoryOverride = overrides.some(o => 
-    o.entityType === 'category' && o.category === getItemCategory(item)
+    o.entityType === 'category' && o.entityId === getItemCategory(item)
   )
   const hasItemRates = ('growthRate' in item && item.growthRate !== undefined) || 
                       ('inflationRate' in item && item.inflationRate !== undefined)
